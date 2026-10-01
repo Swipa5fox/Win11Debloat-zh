@@ -67,7 +67,18 @@
    .\Win11Debloat.ps1
    ```
 
-支持命令行参数自定义行为（如 `.\Win11Debloat.ps1 -RunDefaultsLite` 一键套用推荐配置、`-Silent` 静默执行）。完整参数列表见[上游 Wiki](https://github.com/Raphire/Win11Debloat/wiki/Command%E2%80%90line-Interface#parameters)。
+支持命令行参数自定义行为。常用参数：
+
+| 参数 | 作用 |
+|---|---|
+| `-RunDefaults` | 不显示菜单，直接套用推荐设置 |
+| `-RunDefaultsLite` | 同上，但跳过较难还原的更改 |
+| `-RunSavedSettings` | 按上次会话保存的设置重新执行 |
+| `-Silent` | 静默执行，全程无交互 |
+| `-RemoveApps` | 移除预装应用 |
+| `-CreateRestorePoint` | 更改前先创建系统还原点 |
+| `-Language zh-CN` | 强制指定语言，不跟随系统 |
+| `-Sysprep` | 把更改写入 Windows 默认配置文件，新用户自动生效（进阶） |
 
 ## 语言设置
 
@@ -125,5 +136,4 @@ Windows 默认把 `.ps1` 关联到编辑器。请双击 `Run.bat`，或用方法
 ## 致谢与许可
 
 - 上游项目：[Raphire/Win11Debloat](https://github.com/Raphire/Win11Debloat) —— 全部核心功能归上游作者所有，中文语言包与少量适配由本仓库完成。
-- 本项目遵循 [MIT 许可证](./LICENSE)，与上游一致。
-- 喜欢这个脚本的话，请到[上游仓库](https://github.com/Raphire/Win11Debloat)给作者点个 Star，或[请作者喝杯咖啡](https://ko-fi.com/M4M5C6UPC)。
+- 本项目遵循 [MIT 许可证](./LICENSE)，与上游一致。喜欢这个脚本的话，欢迎给[上游仓库](https://github.com/Raphire/Win11Debloat)点个 Star。
