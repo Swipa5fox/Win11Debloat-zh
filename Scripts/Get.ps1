@@ -163,7 +163,7 @@ $tempArchivePath = Join-Path $tempRootPath 'win11debloat.zip'
 # only place the language packs live, since the fork publishes no releases of its own. -Dev keeps
 # upstream's original meaning of "the upstream development branch" for anyone who wants the English
 # original.
-$forkArchiveUri = "https://github.com/Swipa5fox/Win11Debloat-zh-CN/archive/refs/heads/master.zip"
+$forkArchiveUri = "https://github.com/Swipa5fox/Win11Debloat-zh/archive/refs/heads/master.zip"
 try {
     if ($Dev) {
         Write-Output (Get-ConsoleText "> Downloading development version of Win11Debloat...")

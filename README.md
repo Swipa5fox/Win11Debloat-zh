@@ -1,6 +1,6 @@
 # Win11Debloat 中文版
 
-[![Tests](https://github.com/Swipa5fox/Win11Debloat-zh-CN/actions/workflows/tests.yml/badge.svg?style=for-the-badge&label=%E6%B5%8B%E8%AF%95)](https://github.com/Swipa5fox/Win11Debloat-zh-CN/actions/workflows/tests.yml)
+[![Tests](https://github.com/Swipa5fox/Win11Debloat-zh/actions/workflows/tests.yml/badge.svg?style=for-the-badge&label=%E6%B5%8B%E8%AF%95)](https://github.com/Swipa5fox/Win11Debloat-zh/actions/workflows/tests.yml)
 [![Upstream](https://img.shields.io/badge/%E4%B8%8A%E6%B8%B8-Raphire%2FWin11Debloat-2D9F2D?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Raphire/Win11Debloat)
 [![License](https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF-MIT-grey?style=for-the-badge)](./LICENSE)
 
@@ -36,7 +36,7 @@
 打开 PowerShell 或终端，粘贴以下命令：
 
 ```PowerShell
-& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/Swipa5fox/Win11Debloat-zh-CN/master/Scripts/Get.ps1")))
+& ([scriptblock]::Create((irm "https://raw.githubusercontent.com/Swipa5fox/Win11Debloat-zh/master/Scripts/Get.ps1")))
 ```
 
 脚本会自动下载最新版到临时目录并启动，接受 UAC 提示即可。
@@ -45,14 +45,14 @@
 
 ### 方法二：手动下载
 
-1. [下载本仓库 ZIP 包](https://github.com/Swipa5fox/Win11Debloat-zh-CN/archive/refs/heads/master.zip)，解压到任意目录。
-2. 进入解压后的 `Win11Debloat-zh-CN-master` 文件夹。
+1. [下载本仓库 ZIP 包](https://github.com/Swipa5fox/Win11Debloat-zh/archive/refs/heads/master.zip)，解压到任意目录。
+2. 进入解压后的 `Win11Debloat-zh-master` 文件夹。
 3. 双击 **`Run.bat`** 启动，接受 UAC 提示。
 4. 按屏幕提示操作。
 
 ### 方法三：命令行直接运行（进阶）
 
-1. [下载 ZIP 包](https://github.com/Swipa5fox/Win11Debloat-zh-CN/archive/refs/heads/master.zip)并解压。
+1. [下载 ZIP 包](https://github.com/Swipa5fox/Win11Debloat-zh/archive/refs/heads/master.zip)并解压。
 2. 以管理员身份打开 PowerShell，临时放行脚本执行：
 
    ```PowerShell
