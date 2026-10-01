@@ -1,0 +1,223 @@
+<#
+    .SYNOPSIS
+        Shows a themed Windows 11-style message box.
+
+    .DESCRIPTION
+        Falls back to a plain native MessageBox if the themed dialog's own schema fails to
+        localize (a bad %LANG:% marker in MessageBox.xaml, not a missing app-wide translation),
+        so a broken schema can't take down every error dialog in the app at once.
+
+    .OUTPUTS
+        System.String. One of 'OK', 'Cancel', 'Yes', or 'No', matching the pressed button
+        in both the themed dialog and the native fallback.
+#>
+function Show-MessageBox {
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$Message,
+        
+        [Parameter(Mandatory=$false)]
+        [string]$Title = "Win11Debloat",
+        
+        [Parameter(Mandatory=$false)]
+        [ValidateSet('OK', 'OKCancel', 'YesNo')]
+        [string]$Button = 'OK',
+        
+        [Parameter(Mandatory=$false)]
+        [ValidateSet('None', 'Information', 'Success', 'Warning', 'Error', 'Question')]
+        [string]$Icon = 'None',
+        
+        [Parameter(Mandatory=$false)]
+        [System.Windows.Window]$Owner = $null,
+        
+        [Parameter(Mandatory=$false)]
+        [int]$Width = 0
+    )
+    
+    Add-Type -AssemblyName PresentationFramework,PresentationCore,WindowsBase | Out-Null
+    
+    $usesDarkMode = Get-SystemUsesDarkMode
+    
+    # Determine owner window - use provided Owner, or fall back to main GUI window
+    $ownerWindow = if ($Owner) { $Owner } else { $script:GuiWindow }
+    
+    # Show overlay if owner window exists
+    $overlay = $null
+    $overlayWasAlreadyVisible = $false
+    if ($ownerWindow) {
+        try {
+            $overlay = $ownerWindow.FindName('ModalOverlay')
+            if ($overlay) {
+                $overlayWasAlreadyVisible = ($overlay.Visibility -eq 'Visible')
+                if (-not $overlayWasAlreadyVisible) {
+                    $ownerWindow.Dispatcher.Invoke([action]{ $overlay.Visibility = 'Visible' })
+                }
+            }
+        }
+        catch { }
+    }
+    
+    # Load XAML from file
+    $xaml = Get-Content -Path $script:MessageBoxSchema -Raw
+    try {
+        $xaml = ConvertTo-LocalizedXaml -Xaml $xaml
+    }
+    catch {
+        # The themed dialog depends on the schema's own %LANG:% markers resolving. If that ever
+        # breaks (a bad marker added to MessageBoxSchema, not a missing app-wide translation - that
+        # never reaches this function), fall back to a plain native MessageBox rather than losing
+        # the ability to show any error dialog at all.
+        Write-Warning (Get-ConsoleText "Falling back to a native message box, themed dialog failed to localize: {0}" -FormatArgs @($($_.Exception.Message)))
+
+        # Hide overlay before showing the fallback (only if this dialog was the one that showed it)
+        if ($overlay -and -not $overlayWasAlreadyVisible) {
+            try {
+                $ownerWindow.Dispatcher.Invoke([action]{ $overlay.Visibility = 'Collapsed' })
+            }
+            catch { }
+        }
+
+        $nativeButton = switch ($Button) {
+            'OKCancel' { [System.Windows.MessageBoxButton]::OKCancel }
+            'YesNo' { [System.Windows.MessageBoxButton]::YesNo }
+            default { [System.Windows.MessageBoxButton]::OK }
+        }
+        $nativeIcon = switch ($Icon) {
+            'Warning' { [System.Windows.MessageBoxImage]::Warning }
+            'Error' { [System.Windows.MessageBoxImage]::Error }
+            'Question' { [System.Windows.MessageBoxImage]::Question }
+            'Information' { [System.Windows.MessageBoxImage]::Information }
+            'Success' { [System.Windows.MessageBoxImage]::Information }
+            default { [System.Windows.MessageBoxImage]::None }
+        }
+
+        $nativeResult = [System.Windows.MessageBox]::Show($Message, $Title, $nativeButton, $nativeIcon)
+        return [string]$nativeResult
+    }
+    $reader = [System.Xml.XmlReader]::Create([System.IO.StringReader]::new($xaml))
+    try {
+        $msgWindow = [System.Windows.Markup.XamlReader]::Load($reader)
+    }
+    finally {
+        $reader.Close()
+    }
+    
+    # Set owner to owner window if it exists
+    if ($ownerWindow) {
+        try {
+            $msgWindow.Owner = $ownerWindow
+        }
+        catch { }
+    }
+    
+    # Apply custom width if specified
+    if ($Width -gt 0) {
+        $msgWindow.Width = $Width
+    }
+    
+    # Apply theme resources
+    Set-WindowThemeResources -window $msgWindow -usesDarkMode $usesDarkMode
+    
+    # Get UI elements
+    $titleText = $msgWindow.FindName('TitleText')
+    $messageText = $msgWindow.FindName('MessageText')
+    $iconText = $msgWindow.FindName('IconText')
+    $button1 = $msgWindow.FindName('Button1')
+    $button2 = $msgWindow.FindName('Button2')
+    $titleBar = $msgWindow.FindName('TitleBar')
+    
+    # Set title and message
+    $titleText.Text = $Title
+    $messageText.Text = $Message
+    
+    # Configure icon
+    switch ($Icon) {
+        'Information' { 
+            $iconText.Text = [char]0xE946
+            $iconText.Foreground = $msgWindow.FindResource('IconInformationColor')
+            $iconText.Visibility = 'Visible'
+        }
+        'Success' {
+            $iconText.Text = [char]0xE73E
+            $iconText.Foreground = $msgWindow.FindResource('IconSuccessColor')
+            $iconText.Visibility = 'Visible'
+        }
+        'Warning' { 
+            $iconText.Text = [char]0xE7BA
+            $iconText.Foreground = $msgWindow.FindResource('IconWarningColor')
+            $iconText.Visibility = 'Visible'
+        }
+        'Error' { 
+            $iconText.Text = [char]0xEA39
+            $iconText.Foreground = $msgWindow.FindResource('IconErrorColor')
+            $iconText.Visibility = 'Visible'
+        }
+        'Question' { 
+            $iconText.Text = [char]0xE897
+            $iconText.Foreground = $msgWindow.FindResource('IconQuestionColor')
+            $iconText.Visibility = 'Visible'
+        }
+        default {
+            $iconText.Visibility = 'Collapsed'
+        }
+    }
+    
+    # Configure buttons - store result in window's Tag property
+    switch ($Button) {
+        'OK' {
+            $button1.Content = Get-Translation -Key 'MessageBoxOk'
+            $button1.Add_Click({ $msgWindow.Tag = 'OK'; $msgWindow.Close() })
+            $button2.Visibility = 'Collapsed'
+            # Right-align sole button by moving it to column 1
+            [System.Windows.Controls.Grid]::SetColumn($button1, 1)
+        }
+        'OKCancel' {
+            $button1.Content = Get-Translation -Key 'MessageBoxOk'
+            $button2.Content = Get-Translation -Key 'MessageBoxCancel'
+            $button1.Add_Click({ $msgWindow.Tag = 'OK'; $msgWindow.Close() })
+            $button2.Add_Click({ $msgWindow.Tag = 'Cancel'; $msgWindow.Close() })
+            $button2.Visibility = 'Visible'
+        }
+        'YesNo' {
+            $button1.Content = Get-Translation -Key 'MessageBoxYes'
+            $button2.Content = Get-Translation -Key 'MessageBoxNo'
+            $button1.Add_Click({ $msgWindow.Tag = 'Yes'; $msgWindow.Close() })
+            $button2.Add_Click({ $msgWindow.Tag = 'No'; $msgWindow.Close() })
+            $button2.Visibility = 'Visible'
+        }
+    }
+    
+    # Title bar drag to move window
+    $titleBar.Add_MouseLeftButtonDown({
+        $msgWindow.DragMove()
+    })
+    
+    # Handle Escape key to close
+    $msgWindow.Add_KeyDown({
+        param($sender, $e)
+        if ($e.Key -eq 'Escape') {
+            if ($Button -eq 'OK') {
+                $msgWindow.Tag = 'OK'
+            } else {
+                $msgWindow.Tag = 'Cancel'
+            }
+            $msgWindow.Close()
+        }
+    })
+    
+    # Show dialog and return result from Tag
+    try {
+        $msgWindow.ShowDialog() | Out-Null
+    }
+    finally {
+        # Hide overlay after dialog closes (only if this dialog was the one that showed it)
+        if ($overlay -and -not $overlayWasAlreadyVisible) {
+            try {
+                $ownerWindow.Dispatcher.Invoke([action]{ $overlay.Visibility = 'Collapsed' })
+            }
+            catch { }
+        }
+    }
+    
+    return $msgWindow.Tag
+}

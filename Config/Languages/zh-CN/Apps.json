@@ -1,0 +1,568 @@
+{
+  "Apps": [
+    {
+      "AppId": "Clipchamp.Clipchamp",
+      "Description": "微软出品的视频编辑器"
+    },
+    {
+      "AppId": "Microsoft.3DBuilder",
+      "Description": "基础 3D 建模软件"
+    },
+    {
+      "AppId": "Microsoft.549981C3F5F10",
+      "Description": "微软小娜语音助手（已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.BingFinance",
+      "Description": "通过必应获取财经资讯与行情（已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.BingFoodAndDrink",
+      "Description": "通过必应查看菜谱与美食资讯（已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.BingHealthAndFitness",
+      "Description": "通过必应进行健康与健身记录（已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.BingNews",
+      "Description": "必应新闻聚合器（已由 Microsoft 资讯 / 开始取代）"
+    },
+    {
+      "AppId": "Microsoft.BingSports",
+      "Description": "通过必应查看体育新闻与比分（已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.BingTranslator",
+      "Description": "必应翻译服务"
+    },
+    {
+      "AppId": "Microsoft.BingTravel",
+      "Description": "通过必应规划行程与查看旅游资讯（已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.BingWeather",
+      "Description": "必应天气预报"
+    },
+    {
+      "AppId": "XP9CXNGPPJ97XX",
+      "Description": "集成于 Windows 的 AI 助手"
+    },
+    {
+      "AppId": "Microsoft.Windows.AIHub",
+      "Description": "Copilot+ AI 中心应用（Windows 11 24H2 及以上）"
+    },
+    {
+      "AppId": "Microsoft.PCManager",
+      "Description": "微软电脑管家系统清理与优化工具（常被预装）"
+    },
+    {
+      "AppId": "Microsoft.Getstarted",
+      "Description": "Windows 使用技巧与入门指南（Windows 11 中无法卸载）"
+    },
+    {
+      "AppId": "Microsoft.Messaging",
+      "Description": "消息应用，常与 Skype 集成（大部分已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.Microsoft3DViewer",
+      "Description": "3D 模型查看器"
+    },
+    {
+      "AppId": "Microsoft.MicrosoftJournal",
+      "Description": "针对手写笔优化的数字笔记应用"
+    },
+    {
+      "AppId": "Microsoft.MicrosoftOfficeHub",
+      "Description": "访问 Microsoft Office 应用与文档的入口（Microsoft 365 应用的前身）"
+    },
+    {
+      "AppId": "Microsoft.MicrosoftPowerBIForWindows",
+      "Description": "商业分析服务客户端"
+    },
+    {
+      "AppId": "Microsoft.MicrosoftSolitaireCollection",
+      "Description": "纸牌游戏合集"
+    },
+    {
+      "AppId": "Microsoft.MicrosoftStickyNotes",
+      "Description": "数字便笺应用（已停止支持，由 OneNote 取代）"
+    },
+    {
+      "AppId": "Microsoft.MixedReality.Portal",
+      "Description": "Windows 混合现实头显的门户应用"
+    },
+    {
+      "AppId": "Microsoft.NetworkSpeedTest",
+      "Description": "网络连接速度测试工具"
+    },
+    {
+      "AppId": "Microsoft.News",
+      "Description": "资讯聚合器（取代必应新闻，现属 Microsoft 开始）"
+    },
+    {
+      "AppId": "Microsoft.Office.OneNote",
+      "Description": "数字笔记应用（通用 Windows 平台版）"
+    },
+    {
+      "AppId": "Microsoft.Office.Sway",
+      "Description": "演示文稿与叙事应用"
+    },
+    {
+      "AppId": "Microsoft.OneConnect",
+      "Description": "移动运营商管理应用（已由“移动套餐”取代）"
+    },
+    {
+      "AppId": "Microsoft.Print3D",
+      "Description": "3D 打印准备软件"
+    },
+    {
+      "AppId": "Microsoft.PowerAutomateDesktop",
+      "Description": "桌面自动化工具（RPA）"
+    },
+    {
+      "AppId": "Microsoft.SkypeApp",
+      "Description": "Skype 通讯应用，通用 Windows 平台版（已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.Todos",
+      "Description": "待办事项与任务管理应用"
+    },
+    {
+      "AppId": "Microsoft.Windows.DevHome",
+      "Description": "开发者仪表板与工具配置实用程序（已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.WindowsAlarms",
+      "Description": "闹钟和时钟应用"
+    },
+    {
+      "AppId": "Microsoft.WindowsFeedbackHub",
+      "Description": "向微软反馈 Windows 问题的应用"
+    },
+    {
+      "AppId": "Microsoft.WindowsMaps",
+      "Description": "地图与导航应用"
+    },
+    {
+      "AppId": "Microsoft.WindowsSoundRecorder",
+      "Description": "基础录音应用"
+    },
+    {
+      "AppId": "Microsoft.XboxApp",
+      "Description": "旧版 Xbox 主机伴侣应用（已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.ZuneVideo",
+      "Description": "用于租借、购买和播放影视内容的应用（英文站已更名为 Films & TV）"
+    },
+    {
+      "AppId": "MicrosoftCorporationII.MicrosoftFamily",
+      "Description": "用于管理家庭账户与设置的“家庭安全”应用"
+    },
+    {
+      "AppId": "MicrosoftCorporationII.QuickAssist",
+      "Description": "远程协助工具"
+    },
+    {
+      "AppId": "MicrosoftTeams",
+      "Description": "旧版 Microsoft Teams 个人版（微软商店版）"
+    },
+    {
+      "AppId": "MSTeams",
+      "Description": "新版 Microsoft Teams 应用（工作 / 学校版或个人版）"
+    },
+    {
+      "AppId": "ACGMediaPlayer",
+      "Description": "媒体播放器应用"
+    },
+    {
+      "AppId": "ActiproSoftwareLLC",
+      "Description": "疑似 UI 控件或软件组件，常由 OEM 厂商捆绑预装"
+    },
+    {
+      "AppId": "AdobeSystemsIncorporated.AdobePhotoshopExpress",
+      "Description": "Adobe 出品的基础照片编辑应用"
+    },
+    {
+      "AppId": "Amazon.com.Amazon",
+      "Description": "亚马逊购物应用"
+    },
+    {
+      "AppId": "AmazonVideo.PrimeVideo",
+      "Description": "Amazon Prime Video 流媒体服务应用"
+    },
+    {
+      "AppId": "Asphalt8Airborne",
+      "Description": "竞速游戏"
+    },
+    {
+      "AppId": "AutodeskSketchBook",
+      "Description": "数字绘画与速写应用"
+    },
+    {
+      "AppId": "CaesarsSlotsFreeCasino",
+      "Description": "老虎机娱乐游戏"
+    },
+    {
+      "AppId": "COOKINGFEVER",
+      "Description": "餐厅模拟经营游戏"
+    },
+    {
+      "AppId": "CyberLinkMediaSuiteEssentials",
+      "Description": "多媒体软件套件（常由 OEM 厂商预装）"
+    },
+    {
+      "AppId": "DisneyMagicKingdoms",
+      "Description": "迪士尼主题乐园建造游戏"
+    },
+    {
+      "AppId": "Disney.37853FC22B2CE",
+      "Description": "Disney+ 流媒体服务应用"
+    },
+    {
+      "AppId": "DrawboardPDF",
+      "Description": "PDF 查看与批注应用，侧重于手写笔输入"
+    },
+    {
+      "AppId": "Duolingo-LearnLanguagesforFree",
+      "Description": "语言学习应用"
+    },
+    {
+      "AppId": "EclipseManager",
+      "Description": "通常与特定 OEM 软件或工具相关（例如用于管理屏幕设置）"
+    },
+    {
+      "AppId": "FACEBOOK.FACEBOOK",
+      "Description": "Facebook 社交应用"
+    },
+    {
+      "AppId": "FarmVille2CountryEscape",
+      "Description": "农场模拟经营游戏"
+    },
+    {
+      "AppId": "Flipboard",
+      "Description": "以杂志形式呈现的资讯与社交聚合应用"
+    },
+    {
+      "AppId": "HiddenCity",
+      "Description": "寻物解谜冒险游戏"
+    },
+    {
+      "AppId": "HULULLC.HULUPLUS",
+      "Description": "Hulu 流媒体服务应用"
+    },
+    {
+      "AppId": "iHeartRadio",
+      "Description": "网络电台应用"
+    },
+    {
+      "AppId": "Facebook.Instagram",
+      "Description": "Instagram 社交应用"
+    },
+    {
+      "AppId": "king.com.BubbleWitch3Saga",
+      "Description": "King 出品的益智游戏"
+    },
+    {
+      "AppId": "king.com.CandyCrushSaga",
+      "Description": "King 出品的益智游戏"
+    },
+    {
+      "AppId": "king.com.CandyCrushSodaSaga",
+      "Description": "King 出品的益智游戏"
+    },
+    {
+      "AppId": "LinkedInforWindows",
+      "Description": "LinkedIn 职业社交应用"
+    },
+    {
+      "AppId": "MarchofEmpires",
+      "Description": "策略游戏"
+    },
+    {
+      "AppId": "4DF9E0F8.Netflix",
+      "Description": "Netflix 流媒体服务应用"
+    },
+    {
+      "AppId": "NYTCrossword",
+      "Description": "《纽约时报》填字游戏应用"
+    },
+    {
+      "AppId": "OneCalendar",
+      "Description": "日历聚合应用"
+    },
+    {
+      "AppId": "PandoraMediaInc",
+      "Description": "Pandora 音乐流媒体应用"
+    },
+    {
+      "AppId": "PhototasticCollage",
+      "Description": "照片拼贴创作应用"
+    },
+    {
+      "AppId": "PicsArt-PhotoStudio",
+      "Description": "照片编辑与创作应用"
+    },
+    {
+      "AppId": "PolarrPhotoEditorAcademicEdition",
+      "Description": "照片编辑应用（教育版）"
+    },
+    {
+      "AppId": "flaregamesGmbH.RoyalRevolt",
+      "Description": "塔防 / 策略游戏"
+    },
+    {
+      "AppId": "Sidia.LiveWallpaper",
+      "Description": "动态壁纸应用"
+    },
+    {
+      "AppId": "SlingTV",
+      "Description": "电视直播流媒体服务应用"
+    },
+    {
+      "AppId": "SpotifyAB.SpotifyMusic",
+      "Description": "Spotify 音乐流媒体应用"
+    },
+    {
+      "AppId": "BytedancePte.Ltd.TikTok",
+      "Description": "TikTok 短视频应用"
+    },
+    {
+      "AppId": "TuneInRadio",
+      "Description": "网络电台应用"
+    },
+    {
+      "AppId": "WinZipUniversal",
+      "Description": "文件压缩与解压工具（通用 Windows 平台版）"
+    },
+    {
+      "AppId": "Microsoft.BingSearch",
+      "Description": "微软必应网页搜索（集成于 Windows 搜索）"
+    },
+    {
+      "AppId": "Microsoft.Edge",
+      "Description": "Windows 的默认浏览器。警告：移除后 Windows 沙盒将失去唯一的浏览器，并可能影响其他应用"
+    },
+    {
+      "AppId": "Microsoft.GamingApp",
+      "Description": "新版 Xbox 游戏应用，安装部分电脑游戏时需要"
+    },
+    {
+      "AppId": "Microsoft.GetHelp",
+      "Description": "部分 Windows 11 疑难解答与支持功能需要"
+    },
+    {
+      "AppId": "Microsoft.M365Companions",
+      "Description": "Microsoft 365（商业版）的日历、文件和人员迷你应用；若管理员启用，可能被重新安装"
+    },
+    {
+      "AppId": "Microsoft.MSPaint",
+      "Description": "画图 3D（带 3D 功能的现代画图应用）"
+    },
+    {
+      "AppId": "Microsoft.OneDrive",
+      "Description": "OneDrive 个人版云存储客户端"
+    },
+    {
+      "AppId": "Microsoft.OutlookForWindows",
+      "Description": "新版 Outlook for Windows 邮件客户端"
+    },
+    {
+      "AppId": "Microsoft.Paint",
+      "Description": "经典画图（传统 2D 画图应用）"
+    },
+    {
+      "AppId": "Microsoft.People",
+      "Description": "“邮件和日历”需要并随附的应用（已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.RemoteDesktop",
+      "Description": "远程桌面客户端应用"
+    },
+    {
+      "AppId": "Microsoft.ScreenSketch",
+      "Description": "截图工具（屏幕截图与标注工具）"
+    },
+    {
+      "AppId": "Microsoft.StartExperiencesApp",
+      "Description": "为 Windows 小组件“我的资讯”提供支持"
+    },
+    {
+      "AppId": "Microsoft.Whiteboard",
+      "Description": "数字协作白板应用"
+    },
+    {
+      "AppId": "Microsoft.Windows.Photos",
+      "Description": "默认的照片查看与基础编辑应用"
+    },
+    {
+      "AppId": "Microsoft.WindowsCalculator",
+      "Description": "计算器应用"
+    },
+    {
+      "AppId": "Microsoft.WindowsCamera",
+      "Description": "使用内置或外接摄像头的相机应用"
+    },
+    {
+      "AppId": "Microsoft.windowscommunicationsapps",
+      "Description": "“邮件和日历”应用套件（已停止支持）"
+    },
+    {
+      "AppId": "Microsoft.WindowsNotepad",
+      "Description": "记事本应用"
+    },
+    {
+      "AppId": "Microsoft.WindowsStore",
+      "Description": "Microsoft Store。警告：移除后难以重新安装！"
+    },
+    {
+      "AppId": "Microsoft.WindowsTerminal",
+      "Description": "Windows 11 的默认终端应用（命令提示符、PowerShell、WSL）。警告：若你是从 Windows 终端启动 Win11Debloat 的，请勿移除，否则脚本会运行失败。"
+    },
+    {
+      "AppId": "Microsoft.Xbox.TCUI",
+      "Description": "UI 框架，Microsoft Store、照片及部分游戏似乎需要"
+    },
+    {
+      "AppId": "Microsoft.XboxGameOverlay",
+      "Description": "游戏覆盖层，部分游戏需要或有用（Xbox Game Bar 的组成部分）"
+    },
+    {
+      "AppId": "Microsoft.XboxGamingOverlay",
+      "Description": "游戏覆盖层，部分游戏需要或有用（Xbox Game Bar 的组成部分）"
+    },
+    {
+      "AppId": "Microsoft.XboxIdentityProvider",
+      "Description": "Xbox 登录框架，部分游戏和 Xbox 服务需要"
+    },
+    {
+      "AppId": "Microsoft.XboxSpeechToTextOverlay",
+      "Description": "部分游戏需要的辅助功能。警告：移除后难以重新安装！"
+    },
+    {
+      "AppId": "Microsoft.YourPhone",
+      "Description": "手机连接（将 Android / iOS 手机连接到电脑）"
+    },
+    {
+      "AppId": "Microsoft.ZuneMusic",
+      "Description": "新版媒体播放器（取代 Groove 音乐，可播放本地音频 / 视频）"
+    },
+    {
+      "AppId": "MicrosoftWindows.CrossDevice",
+      "Description": "文件资源管理器、相机等中的手机集成功能（“手机连接”功能的一部分）"
+    },
+    {
+      "AppId": "MicrosoftWindows.Client.WebExperience",
+      "Description": "通过 Microsoft Store 提供并更新小组件等特定功能"
+    },
+    {
+      "AppId": "Microsoft.WidgetsPlatformRuntime",
+      "Description": "Windows 小组件运行所需的运行时"
+    },
+    {
+      "AppId": "LGElectronics.LGMonitorApp",
+      "Description": "LG 用于控制 LG 显示器的 OEM 软件；连接 LG 显示器时 Windows 更新可能会静默重装"
+    },
+    {
+      "AppId": "AD2F1837.HPAIExperienceCenter",
+      "Description": "HP OEM 软件，提供 AI 增强功能与支持"
+    },
+    {
+      "AppId": "AD2F1837.HPConnectedMusic",
+      "Description": "HP OEM 音乐软件（可能已停止支持）"
+    },
+    {
+      "AppId": "AD2F1837.HPConnectedPhotopoweredbySnapfish",
+      "Description": "HP OEM 照片软件，与 Snapfish 集成（可能已停止支持）"
+    },
+    {
+      "AppId": "AD2F1837.HPDesktopSupportUtilities",
+      "Description": "HP OEM 软件，提供桌面支持工具"
+    },
+    {
+      "AppId": "AD2F1837.HPEasyClean",
+      "Description": "HP OEM 系统清理与优化软件"
+    },
+    {
+      "AppId": "AD2F1837.HPFileViewer",
+      "Description": "HP OEM 软件，用于查看特定文件类型"
+    },
+    {
+      "AppId": "AD2F1837.HPJumpStarts",
+      "Description": "HP OEM 软件，用于教程、应用推荐或 HP 功能快捷入口"
+    },
+    {
+      "AppId": "AD2F1837.HPPCHardwareDiagnosticsWindows",
+      "Description": "HP OEM 电脑硬件诊断软件"
+    },
+    {
+      "AppId": "AD2F1837.HPPowerManager",
+      "Description": "HP OEM 软件，用于管理电源设置与电池"
+    },
+    {
+      "AppId": "AD2F1837.HPPrinterControl",
+      "Description": "HP OEM 软件，用于管理 HP 打印机"
+    },
+    {
+      "AppId": "AD2F1837.HPPrivacySettings",
+      "Description": "HP OEM 软件，用于管理隐私设置"
+    },
+    {
+      "AppId": "AD2F1837.HPQuickDrop",
+      "Description": "HP OEM 软件，用于在设备之间快速传输文件"
+    },
+    {
+      "AppId": "AD2F1837.HPQuickTouch",
+      "Description": "HP OEM 软件，可能用于触控专用快捷键或控制"
+    },
+    {
+      "AppId": "AD2F1837.HPRegistration",
+      "Description": "HP OEM 产品注册软件"
+    },
+    {
+      "AppId": "AD2F1837.HPSupportAssistant",
+      "Description": "HP OEM 软件，提供支持、更新与疑难解答"
+    },
+    {
+      "AppId": "AD2F1837.HPSureShieldAI",
+      "Description": "HP OEM 安全软件，可能提供基于 AI 的威胁防护"
+    },
+    {
+      "AppId": "AD2F1837.HPSystemInformation",
+      "Description": "HP OEM 软件，用于显示系统信息"
+    },
+    {
+      "AppId": "AD2F1837.HPWelcome",
+      "Description": "HP OEM 软件，提供欢迎体验或初始设置帮助"
+    },
+    {
+      "AppId": "AD2F1837.HPWorkWell",
+      "Description": "HP OEM 软件，关注健康，可能包含休息提醒或人体工学建议"
+    },
+    {
+      "AppId": "AD2F1837.myHP",
+      "Description": "HP OEM 中心应用，提供设备信息、支持与服务"
+    },
+    {
+      "AppId": "E046963F.LenovoCompanion",
+      "Description": "联想 OEM 中心应用，提供设备设置、更新与支持"
+    },
+    {
+      "AppId": "LenovoCompanyLimited.LenovoVantageService",
+      "Description": "Lenovo Vantage 的后台服务组件"
+    },
+    {
+      "AppId": "DellInc.DellSupportAssistforPCs",
+      "Description": "戴尔 OEM 支持、诊断与更新工具"
+    },
+    {
+      "AppId": "DellInc.DellDigitalDelivery",
+      "Description": "戴尔 OEM 软件，用于交付预购软件"
+    },
+    {
+      "AppId": "DellInc.DellMobileConnect",
+      "Description": "戴尔 OEM 应用，用于将 Android / iOS 手机连接到电脑（已由“手机连接”取代）"
+    }
+  ]
+}
