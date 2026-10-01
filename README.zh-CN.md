@@ -1,9 +1,12 @@
 # Win11Debloat 中文版
 
-[English](./README.md) | 简体中文
+<h3 align="center">
 
-[![Tests](https://github.com/Swipa5fox/Win11Debloat-zh/actions/workflows/tests.yml/badge.svg?style=for-the-badge&label=%E6%B5%8B%E8%AF%95)](https://github.com/Swipa5fox/Win11Debloat-zh/actions/workflows/tests.yml)
-[![License](https://img.shields.io/badge/%E8%AE%B8%E5%8F%AF-MIT-grey?style=for-the-badge)](./LICENSE)
+<a href="./README.md">English</a> | 简体中文
+
+</h3>
+
+
 
 [Win11Debloat](https://github.com/Raphire/Win11Debloat) 的**完整中文汉化版**。一个轻量、易用的 PowerShell 脚本，无需安装即可清理 Windows 预装应用、关闭遥测、移除烦人的界面元素。本仓库在上游基础上补全了整套中文语言包，让图形界面、命令行和启动提示**全部显示中文**。
 
