@@ -1,6 +1,7 @@
 # Win11Debloat
 
-English | **[简体中文](./README.md)**
+[![English](https://img.shields.io/badge/%F0%9F%8C%90_Language-English-2D9F2D?style=for-the-badge)](./README_EN.md)
+[![简体中文](https://img.shields.io/badge/%F0%9F%8C%90_%E8%AF%AD%E8%A8%80-%E7%AE%80%E4%BD%93%E4%B8%AD%E6%96%87-grey?style=for-the-badge)](./README.md)
 
 [![GitHub Release](https://img.shields.io/github/v/release/Raphire/Win11Debloat?style=for-the-badge&label=Latest%20release)](https://github.com/Raphire/Win11Debloat/releases/latest)
 [![Join the Discussion](https://img.shields.io/badge/Join-the%20Discussion-2D9F2D?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Raphire/Win11Debloat/discussions)
