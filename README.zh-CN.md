@@ -113,16 +113,16 @@ git merge upstream/master
 
 ## 常见问题
 
-**双击 `Win11Debloat.ps1` 打开的是记事本？**
+**双击 `Win11Debloat.ps1` 打开的是记事本？**<br>
 Windows 默认把 `.ps1` 关联到编辑器。请双击 `Run.bat`，或用方法三从 PowerShell 运行。
 
-**界面或控制台出现乱码（`鍏抽棴` 之类）？**
+**界面或控制台出现乱码吗？**<br>
 语言文件必须是无 BOM 的 UTF-8。用记事本改过 JSON 后如果出现乱码，请改用 VS Code 等编辑器以「UTF-8（无 BOM）」重新保存。
 
-**想还原脚本做的修改？**
+**想还原脚本做的修改？**<br>
 几乎所有改动都可还原，预装应用也能从 Microsoft Store 重装。参考[上游 Wiki 的还原说明](https://github.com/Raphire/Win11Debloat/wiki/Reverting-Changes)。
 
-**脚本能用在 PowerShell 7 吗？**
+**脚本能用在 PowerShell 7 吗？**<br>
 不能。脚本会检测并提示退出，请用系统自带的 Windows PowerShell 5.1。
 
 ## 测试
