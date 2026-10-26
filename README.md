@@ -8,7 +8,12 @@
 </p>
 
 <p align="center">
-  <sub>左：首页　|　右：自定义设置 → 系统优化</sub>
+  <img src="/Assets/Images/apps.png" width="49%" alt="Win11Debloat 应用移除">
+  <img src="/Assets/Images/deploy.png" width="49%" alt="Win11Debloat 部署设置">
+</p>
+
+<p align="center">
+  <sub>上：首页 / 系统优化　|　下：应用移除 / 部署设置</sub>
 </p>
 
 ## 汉化范围
@@ -109,6 +114,8 @@ git merge upstream/master
 ```
 
 合并后若有新增文案，往 `Config/Languages/zh-CN/` 对应 JSON 里补翻译即可；缺失的键会自动回退英文，不会报错。
+
+> 合并时若提示 `Assets/Images/menu.png` 冲突（删除 / 修改冲突），保留本仓库的中文示意图即可，直接 `git checkout --ours Assets/Images/menu.png` 后删除该文件并 `git add`。
 
 ## 常见问题
 
