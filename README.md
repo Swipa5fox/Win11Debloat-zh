@@ -14,7 +14,7 @@
 #### 系统优化
 <img src="/Assets/Images/tweaks.png" alt="Win11Debloat 系统优化" width="100%">
 
-103 项优化分 12 个分类展示，每个功能的名称、说明、悬停提示均中文化，鼠标悬停即看详细解释。
+12 个分类共 95 项优化，名称、说明、悬停提示全部中文化，鼠标悬停即看详细解释。另有 8 项功能项不归入任何分类、不在这个列表里展示（如强制卸载 Edge、替换开始菜单布局）。
 
 #### 部署设置
 <img src="/Assets/Images/deploy.png" alt="Win11Debloat 部署设置" width="100%">
@@ -25,10 +25,10 @@
 
 | 部分 | 内容 | 数量 |
 |---|---|---|
-| 图形界面 | 主窗口、应用选择、各类弹窗、气泡提示、导入导出等 9 个窗体 | 322 条界面文案 |
+| 图形界面 | 主窗口、应用选择、应用进度、导入导出、还原备份、消息框、关于、气泡提示共 8 个窗体 | 322 条界面文案 |
 | 功能项 | 每个功能的名称 / 说明 / 执行中 / 撤销 / 撤销中文案，外加 UI 分组 | 103 项 + 10 分组 |
 | 应用列表 | 预装应用的移除建议说明（含 HP / Dell / Lenovo 等 OEM 应用） | 141 条 |
-| 应用分类 | 应用选择窗口左侧的分类标签 | 12 条 |
+| 优化项分类 | 系统优化页 12 个分类的标题 | 12 条 |
 | 命令行模式 | 菜单、选项、确认提示、错误提示 | 263 条 |
 | 启动器 | `Run.bat` 与一键下载脚本按系统语言自动切换 | — |
 
@@ -50,8 +50,10 @@
 & ([scriptblock]::Create((irm "https://raw.githubusercontent.com/Swipa5fox/Win11Debloat-zh/master/Scripts/Get.ps1")))
 ```
 
-脚本会自动下载最新版到临时目录并启动，接受 UAC 提示即可。
+脚本会自动下载到临时目录并启动，接受 UAC 提示即可。
 
+> 此方式拉取的是本仓库 `master` 分支的最新代码（免下载直接用）；想要稳定的发布版本，请用方法二。
+>
 > 若 `raw.githubusercontent.com` 无法访问（国内网络常见），改用方法二。
 
 ### 方法二：手动下载
@@ -83,18 +85,22 @@
 | `-RunDefaults` | 不显示菜单，直接套用推荐设置 |
 | `-RunDefaultsLite` | 同上，但跳过较难还原的更改 |
 | `-RunSavedSettings` | 按上次会话保存的设置重新执行 |
-| `-Silent` | 静默执行，全程无交互 |
-| `-RemoveApps` | 移除预装应用 |
+| `-CLI` | 进入命令行模式，不启动图形界面 |
+| `-Silent` | 静默执行，全程无交互（需配合具体功能参数） |
+| `-RemoveApps` | 移除预装应用；不指定 `-Apps` 时使用默认列表 |
+| `-Apps <列表>` | 自定义要移除的应用 ID，逗号分隔 |
 | `-CreateRestorePoint` | 更改前先创建系统还原点 |
 | `-Language zh-CN` | 强制指定语言，不跟随系统 |
 | `-Sysprep` | 把更改写入 Windows 默认配置文件，新用户自动生效（进阶） |
+
+完整的 100 多个开关（每项优化都有对应参数）见 `Win11Debloat.ps1` 顶部的 `param` 块，一般用不到手动指定——界面里勾选即可。
 
 ## 语言设置
 
 - **默认自动跟随系统**：系统显示语言为中文（`zh-*`）时自动加载中文，其他语言回退英文。
 - **强制指定语言**：加 `-Language` 参数，例如 `.\Win11Debloat.ps1 -Language zh-CN`。
-- `Run.bat` 按注册表中的系统区域设置判断，与 PowerShell 内部逻辑一致。
-- 语言文件位于 `Config/Languages/<语言代码>/`，想改措辞直接编辑对应 JSON 即可，无需动脚本。
+- `Run.bat` 读注册表的 `LocaleName` 判断中文区域，PowerShell 内部用的是系统界面语言（`CurrentUICulture`）。绝大多数机器两者一致；若你把界面语言和区域格式设成不同（如英文界面 + 中文区域），两处提示可能语言不同，属正常现象。
+- 语言文件位于 `Config/Languages/<语言代码>/`，想改措辞直接编辑对应 JSON 即可，无需动脚本。新增语言时缺键会自动回退英文，不会报错。
 
 ## 与上游的差异
 
@@ -105,10 +111,10 @@
 | 新增 `Config/Languages/zh-CN/` | 五个中文语言文件（Chrome / Features / Categories / Apps / Console） |
 | 新增 `Config/Languages/en-US/Console.json` | 控制台文案的英文基线，供其他语言回退 |
 | `Get-ConsoleText` 本地化函数 | 按「英文原文 → 中文」映射控制台与日志输出，缺译时回退英文原文 |
-| 一键脚本默认源指向本仓库 | `Scripts/Get.ps1` 默认下载本仓库（带语言包）；**`-Dev` 改为拉取上游英文开发版** |
+| 一键脚本默认源指向本仓库 | `Scripts/Get.ps1` 默认下载本仓库 `master` 分支代码（带语言包，非发布版）；**`-Dev` 改为拉取上游英文开发版** |
 | `Run.bat` 中英文分流 | 按 `LocaleName` 判断，中文系统显示中文提示 |
 | 非管理员自动提权 | 不再询问 `y/n`，直接请求 UAC（上游需手动确认） |
-| `Run-Tests.ps1` 固定测试语言 | Pester 断言依赖英文原文，测试时固定 en-US，不影响正常运行 |
+| `Run-Tests.ps1` 固定测试语言 | Pester 断言依赖英文原文，测试时固定 en-US，不影响正常运行（该脚本仅用于自检，使用者无需运行） |
 | 反馈入口指向本仓库 | `Run.bat` 的 issue 提示、主窗口「反馈问题」菜单、应用失败时的上报按钮，均指向本仓库 issues（上游 Wiki 链接保留，因为说明文档仍在上游） |
 
 ## 同步上游更新
@@ -121,7 +127,11 @@ git merge upstream/master
 
 合并后若有新增文案，往 `Config/Languages/zh-CN/` 对应 JSON 里补翻译即可；缺失的键会自动回退英文，不会报错。
 
-> 合并时若提示 `Assets/Images/menu.png` 冲突（删除 / 修改冲突），保留本仓库的中文示意图即可，直接 `git checkout --ours Assets/Images/menu.png` 后删除该文件并 `git add`。
+**关于 `Assets/Images/menu.png`**：本仓库删除了上游的英文截图，换成了自己的中文示意图。若合并时提示该文件 `modify/delete` 冲突，保留删除状态即可：
+
+```PowerShell
+git rm Assets/Images/menu.png
+```
 
 ## 常见问题
 
