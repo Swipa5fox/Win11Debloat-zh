@@ -54,7 +54,7 @@ if defined wtPath (
 
 echo.
 echo %msgSupport%
-echo https://github.com/Raphire/Win11Debloat/issues
+echo https://github.com/Swipa5fox/Win11Debloat-zh/issues
 goto :EOF
 
 :: Logging Function

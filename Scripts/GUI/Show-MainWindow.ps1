@@ -90,7 +90,7 @@ function Show-MainWindow {
     })
 
     $menuDocumentation.Add_Click({ Start-Process "https://github.com/Raphire/Win11Debloat/wiki" })
-    $menuReportBug.Add_Click({ Start-Process "https://github.com/Raphire/Win11Debloat/issues" })
+    $menuReportBug.Add_Click({ Start-Process "https://github.com/Swipa5fox/Win11Debloat-zh/issues" })
 
     $menuLogs.Add_Click({
         $logsFolder = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) 'Logs'

@@ -226,7 +226,7 @@ function Show-ApplyModal {
 
     $applyKofiBtn.Add_Click({
         if ($script:ApplyModalInErrorState) {
-            Start-Process "https://github.com/Raphire/Win11Debloat/issues/new"
+            Start-Process "https://github.com/Swipa5fox/Win11Debloat-zh/issues/new"
         } else {
             Start-Process "https://ko-fi.com/raphire"
         }

@@ -56,14 +56,14 @@
 
 ### 方法二：手动下载
 
-1. [下载本仓库 ZIP 包](https://github.com/Swipa5fox/Win11Debloat-zh/archive/refs/heads/master.zip)，解压到任意目录。
-2. 进入解压后的 `Win11Debloat-zh-master` 文件夹。
+1. 到 [Releases](https://github.com/Swipa5fox/Win11Debloat-zh/releases/latest) 下载最新版的 `Win11Debloat-zh-v*.zip`，解压到任意目录。
+2. 进入解压后的文件夹。
 3. 双击 **`Run.bat`** 启动，接受 UAC 提示。
 4. 按屏幕提示操作。
 
 ### 方法三：命令行直接运行（进阶）
 
-1. [下载 ZIP 包](https://github.com/Swipa5fox/Win11Debloat-zh/archive/refs/heads/master.zip)并解压。
+1. 同上，从 [Releases](https://github.com/Swipa5fox/Win11Debloat-zh/releases/latest) 下载 ZIP 包并解压。
 2. 以管理员身份打开 PowerShell，临时放行脚本执行：
 
    ```PowerShell
@@ -109,6 +109,7 @@
 | `Run.bat` 中英文分流 | 按 `LocaleName` 判断，中文系统显示中文提示 |
 | 非管理员自动提权 | 不再询问 `y/n`，直接请求 UAC（上游需手动确认） |
 | `Run-Tests.ps1` 固定测试语言 | Pester 断言依赖英文原文，测试时固定 en-US，不影响正常运行 |
+| 反馈入口指向本仓库 | `Run.bat` 的 issue 提示、主窗口「反馈问题」菜单、应用失败时的上报按钮，均指向本仓库 issues（上游 Wiki 链接保留，因为说明文档仍在上游） |
 
 ## 同步上游更新
 
