@@ -2,7 +2,14 @@
 
 [Win11Debloat](https://github.com/Raphire/Win11Debloat) 的**完整中文汉化版**。一个轻量、易用的 PowerShell 脚本，无需安装即可清理 Windows 预装应用、关闭遥测、移除烦人的界面元素。本仓库在上游基础上补全了整套中文语言包，让图形界面、命令行和启动提示**全部显示中文**。
 
-![Win11Debloat 菜单](/Assets/Images/menu.png)
+<p align="center">
+  <img src="/Assets/Images/home.png" width="49%" alt="Win11Debloat 首页">
+  <img src="/Assets/Images/tweaks.png" width="49%" alt="Win11Debloat 系统优化">
+</p>
+
+<p align="center">
+  <sub>左：首页　|　右：自定义设置 → 系统优化</sub>
+</p>
 
 ## 汉化范围
 
@@ -116,14 +123,6 @@ Windows 默认把 `.ps1` 关联到编辑器。请双击 `Run.bat`，或用方法
 
 **脚本能用在 PowerShell 7 吗？**<br>
 不能。脚本会检测并提示退出，请用系统自带的 Windows PowerShell 5.1。
-
-## 测试
-
-```PowerShell
-.\Scripts\Run-Tests.ps1
-```
-
-当前状态：**569 通过 / 1 失败**。这 1 个失败是上游测试断言了英文异常消息（`Value was either too large or too small`），在中文 Windows 上 .NET 抛的是中文消息，与汉化无关，改动前后结果一致。
 
 ## 致谢与许可
 
