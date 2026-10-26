@@ -2,19 +2,24 @@
 
 [Win11Debloat](https://github.com/Raphire/Win11Debloat) 的**完整中文汉化版**。一个轻量、易用的 PowerShell 脚本，无需安装即可清理 Windows 预装应用、关闭遥测、移除烦人的界面元素。本仓库在上游基础上补全了整套中文语言包，让图形界面、命令行和启动提示**全部显示中文**。
 
-<p align="center">
-  <img src="/Assets/Images/home.png" width="49%" alt="Win11Debloat 首页">
-  <img src="/Assets/Images/tweaks.png" width="49%" alt="Win11Debloat 系统优化">
-</p>
+<img src="/Assets/Images/home.png" alt="Win11Debloat 首页" width="100%">
 
-<p align="center">
-  <img src="/Assets/Images/apps.png" width="49%" alt="Win11Debloat 应用移除">
-  <img src="/Assets/Images/deploy.png" width="49%" alt="Win11Debloat 部署设置">
-</p>
+## 界面预览
 
-<p align="center">
-  <sub>上：首页 / 系统优化　|　下：应用移除 / 部署设置</sub>
-</p>
+#### 应用移除
+<img src="/Assets/Images/apps.png" alt="Win11Debloat 应用移除" width="100%">
+
+141 个预装应用（含 HP / Dell / Lenovo 等 OEM 应用）全部配好中文说明，按「推荐 / 可选 / 不推荐」三档标注移除风险，支持搜索、排序与快速预设。
+
+#### 系统优化
+<img src="/Assets/Images/tweaks.png" alt="Win11Debloat 系统优化" width="100%">
+
+103 项优化分 12 个分类展示，每个功能的名称、说明、悬停提示均中文化，鼠标悬停即看详细解释。
+
+#### 部署设置
+<img src="/Assets/Images/deploy.png" alt="Win11Debloat 部署设置" width="100%">
+
+指定更改应用到哪个用户，可选创建注册表备份与系统还原点，应用前可先预览全部变更。
 
 ## 汉化范围
 
@@ -22,7 +27,7 @@
 |---|---|---|
 | 图形界面 | 主窗口、应用选择、各类弹窗、气泡提示、导入导出等 9 个窗体 | 322 条界面文案 |
 | 功能项 | 每个功能的名称 / 说明 / 执行中 / 撤销 / 撤销中文案，外加 UI 分组 | 103 项 + 10 分组 |
-| 应用列表 | 预装应用的中文名与移除建议（含 HP / Dell / Lenovo 等 OEM 应用） | 141 条 |
+| 应用列表 | 预装应用的移除建议说明（含 HP / Dell / Lenovo 等 OEM 应用） | 141 条 |
 | 应用分类 | 应用选择窗口左侧的分类标签 | 12 条 |
 | 命令行模式 | 菜单、选项、确认提示、错误提示 | 263 条 |
 | 启动器 | `Run.bat` 与一键下载脚本按系统语言自动切换 | — |
