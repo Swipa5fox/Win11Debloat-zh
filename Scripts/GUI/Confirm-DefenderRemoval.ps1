@@ -16,8 +16,11 @@
         System.Boolean. $true when the removal may proceed.
 #>
 function Confirm-DefenderRemoval {
+    # Deliberately untyped: the console path runs before the WPF assemblies are loaded, where a
+    # [System.Windows.Window] parameter type fails to resolve and turns the whole function definition
+    # into a TypeNotFound error.
     param(
-        [System.Windows.Window]$Owner = $null
+        $Owner = $null
     )
 
     $preflight = Get-DefenderRemovalPreflight
@@ -180,8 +183,9 @@ function Confirm-DefenderRemoval {
         System.Boolean. $false when the feature was dropped because the user declined.
 #>
 function Confirm-DefenderRemovalIfSelected {
+    # Untyped for the same reason as Confirm-DefenderRemoval: the CLI path has no WPF assemblies loaded.
     param(
-        [System.Windows.Window]$Owner = $null
+        $Owner = $null
     )
 
     if (-not $script:Params.ContainsKey('RemoveWindowsDefender')) { return $true }

@@ -159,7 +159,71 @@ function Remove-DefenderRegistryKey {
 
 <#
     .SYNOPSIS
-        Deletes a single registry key from a one-shot task running as SYSTEM.
+        Runs a command line from a one-shot task running as SYSTEM and waits for a condition to hold.
+
+    .DESCRIPTION
+        Some Defender leftovers are owned by TrustedInstaller or held open by a protected process, so an
+        elevated administrator still gets access denied. Replaying the deletion with the SYSTEM token is
+        the least invasive way to get the required rights without shipping a native helper. The
+        temporary task and script are always cleaned up.
+
+    .OUTPUTS
+        System.Boolean. The result of the completion check.
+#>
+function Invoke-SystemTaskCommand {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Command,
+        [Parameter(Mandatory)]
+        [scriptblock]$Completed,
+        [int]$TimeoutSeconds = 15
+    )
+
+    $taskName = 'Win11DebloatDefenderCleanup'
+    $stamp = [Guid]::NewGuid().ToString('N')
+    $scriptPath = Join-Path $env:TEMP "Win11DebloatDefenderCleanup-$stamp.cmd"
+    $logPath = Join-Path $env:TEMP "Win11DebloatDefenderCleanup-$stamp.log"
+
+    try {
+        $lines = @(
+            '@echo off',
+            "$Command >> `"$logPath`" 2>&1",
+            'exit /b %errorlevel%'
+        )
+        Set-Content -LiteralPath $scriptPath -Value $lines -Encoding ASCII -Force
+
+        & schtasks.exe /create /tn $taskName /tr "cmd.exe /c `"$scriptPath`"" /sc once /st 00:00 /ru SYSTEM /rl HIGHEST /f 2>&1 | Out-Null
+        & schtasks.exe /run /tn $taskName 2>&1 | Out-Null
+
+        $deadline = $TimeoutSeconds * 2
+        for ($attempt = 0; $attempt -lt $deadline; $attempt++) {
+            Start-Sleep -Milliseconds 500
+            if (& $Completed) { break }
+
+            # An access-denied will never turn into a success by waiting, and the tools print it into
+            # the task log. Bailing out here is the difference between two seconds and a wasted minute.
+            if ($attempt -ge 2 -and (Test-Path -LiteralPath $logPath)) {
+                $taskOutput = Get-Content -LiteralPath $logPath -Raw -ErrorAction SilentlyContinue
+                if ($taskOutput -and $taskOutput -match '(?i)denied|拒绝访问|无法删除|cannot delete') {
+                    break
+                }
+            }
+        }
+    }
+    catch { }
+    finally {
+        & schtasks.exe /delete /tn $taskName /f 2>&1 | Out-Null
+        Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $logPath -Force -ErrorAction SilentlyContinue
+    }
+
+    return (& $Completed)
+}
+
+
+<#
+    .SYNOPSIS
+        Deletes a registry key from a one-shot task running as SYSTEM.
 
     .OUTPUTS
         System.Boolean. $true when the key no longer exists.
@@ -170,36 +234,10 @@ function Invoke-SystemRegistryDelete {
         [string]$Key
     )
 
-    $taskName = 'Win11DebloatDefenderCleanup'
-    $stamp = [Guid]::NewGuid().ToString('N')
-    $scriptPath = Join-Path $env:TEMP "Win11DebloatDefenderCleanup-$stamp.cmd"
-    $logPath = Join-Path $env:TEMP "Win11DebloatDefenderCleanup-$stamp.log"
+    $quotedKey = $Key.Replace('"', '""')
+    $check = { -not (Test-Path -LiteralPath $Key) }
 
-    try {
-        $quotedKey = $Key.Replace('"', '""')
-        $lines = @(
-            '@echo off',
-            "reg delete `"$quotedKey`" /f >> `"$logPath`" 2>&1",
-            'exit /b %errorlevel%'
-        )
-        Set-Content -LiteralPath $scriptPath -Value $lines -Encoding ASCII -Force
-
-        & schtasks.exe /create /tn $taskName /tr "cmd.exe /c `"$scriptPath`"" /sc once /st 00:00 /ru SYSTEM /rl HIGHEST /f 2>&1 | Out-Null
-        & schtasks.exe /run /tn $taskName 2>&1 | Out-Null
-
-        for ($attempt = 0; $attempt -lt 40; $attempt++) {
-            Start-Sleep -Milliseconds 500
-            if (-not (Test-Path -LiteralPath $Key)) { break }
-        }
-    }
-    catch { }
-    finally {
-        & schtasks.exe /delete /tn $taskName /f 2>&1 | Out-Null
-        Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue
-        Remove-Item -LiteralPath $logPath -Force -ErrorAction SilentlyContinue
-    }
-
-    return (-not (Test-Path -LiteralPath $Key))
+    return (Invoke-SystemTaskCommand -Command "reg delete `"$quotedKey`" /f" -Completed $check)
 }
 
 
@@ -228,7 +266,50 @@ function Remove-DefenderFolder {
     }
     catch { }
 
+    if (Test-Path -LiteralPath $Path) {
+        # Files still mapped by a running Defender service survive the elevated delete; the SYSTEM
+        # context gets past the remaining ACLs, and the caller restarts first anyway.
+        $quotedPath = $Path.Replace('"', '""')
+        $check = { -not (Test-Path -LiteralPath $Path) }
+        $null = Invoke-SystemTaskCommand -Command "rd /s /q `"$quotedPath`"" -Completed $check -TimeoutSeconds 25
+    }
+
     return (-not (Test-Path -LiteralPath $Path))
+}
+
+
+<#
+    .SYNOPSIS
+        Lists the services and drivers that belong to Microsoft Defender Antivirus.
+
+    .DESCRIPTION
+        Newer builds register services whose names are not in the classic list - MpDefenderCoreService
+        is the obvious one, and it keeps MpClient.dll mapped, which is what makes the program folder
+        undeletable. Instead of chasing names, every service whose ImagePath points into a Defender
+        folder is included, on top of the known names.
+
+    .OUTPUTS
+        System.String[]
+#>
+function Get-DefenderServiceNames {
+    $known = @(
+        'WinDefend', 'WdNisSvc', 'Sense', 'SecurityHealthService', 'MpDefenderCoreService',
+        'WdFilter', 'WdNisDrv', 'WdBoot', 'webthreatdefsvc', 'webthreatdefusersvc'
+    )
+
+    $discovered = @()
+    try {
+        foreach ($serviceKey in Get-ChildItem -LiteralPath 'HKLM:\SYSTEM\CurrentControlSet\Services' -ErrorAction SilentlyContinue) {
+            $imagePath = (Get-ItemProperty -LiteralPath $serviceKey.PSPath -Name 'ImagePath' -ErrorAction SilentlyContinue).ImagePath
+            if ([string]::IsNullOrWhiteSpace($imagePath)) { continue }
+            if ($imagePath -match '(?i)windows defender|mpdefendercore|wdnis|wdfilter|wdboot') {
+                $discovered += $serviceKey.PSChildName
+            }
+        }
+    }
+    catch { }
+
+    return @(@($known) + @($discovered) | Sort-Object -Unique)
 }
 
 
@@ -260,10 +341,11 @@ function Invoke-RemoveWindowsDefender {
         return $false
     }
 
-    # Every service entry Defender registers. WdFilter/WdNisDrv are file-system filter drivers and
-    # WdBoot is the early-launch driver; deleting the service entry before the driver file is what
+    # Every service entry Defender registers, plus anything whose ImagePath points into a Defender
+    # folder (MpDefenderCoreService on recent builds). WdFilter/WdNisDrv are file-system filter drivers
+    # and WdBoot is the early-launch driver; deleting the service entry before the driver file is what
     # keeps Windows from booting with a start driver whose file is missing.
-    $services = @('WinDefend', 'WdNisSvc', 'Sense', 'SecurityHealthService', 'WdFilter', 'WdNisDrv', 'WdBoot', 'webthreatdefsvc', 'webthreatdefusersvc')
+    $services = @(Get-DefenderServiceNames)
     $serviceKeys = @($services | ForEach-Object { "HKLM:\SYSTEM\CurrentControlSet\Services\$_" })
     $configKeys = @(
         'HKLM:\SOFTWARE\Microsoft\Windows Defender',
@@ -302,12 +384,31 @@ function Invoke-RemoveWindowsDefender {
             'DefenderConfig'  = 'HKLM\SOFTWARE\Microsoft\Windows Defender'
             'DefenderPolicy'  = 'HKLM\SOFTWARE\Policies\Microsoft\Windows Defender'
         }
+        $expectedBackups = 0
+        $writtenBackups = 0
         foreach ($name in $backupTargets.Keys) {
             $target = $backupTargets[$name]
             if (-not (Test-Path -LiteralPath $target)) { continue }
-            & reg.exe export $target (Join-Path $backupRoot "$name.reg") /y 2>&1 | Out-Null
+            $expectedBackups++
+            $exportPath = Join-Path $backupRoot "$name.reg"
+            & reg.exe export $target $exportPath /y 2>&1 | Out-Null
+            # reg.exe can be blocked by application control policies; the file only counts if it exists
+            # and actually holds a registry header, otherwise the run would report a backup that is not
+            # there - which is worse than no backup at all.
+            if ((Test-Path -LiteralPath $exportPath) -and ((Get-Item -LiteralPath $exportPath).Length -gt 0)) {
+                $writtenBackups++
+            }
         }
-        Write-Host (Get-ConsoleText "Backup written to {0}" -FormatArgs @($backupRoot))
+
+        if ($expectedBackups -eq 0) {
+            Write-Host (Get-ConsoleText "No Defender registry keys were left to back up.")
+        }
+        elseif ($writtenBackups -eq $expectedBackups) {
+            Write-Host (Get-ConsoleText "Backup written to {0}" -FormatArgs @($backupRoot))
+        }
+        else {
+            Write-Warning (Get-ConsoleText "Only {0} of {1} registry keys could be exported to {2}. reg.exe may be blocked by an application control policy." -FormatArgs @($writtenBackups, $expectedBackups, $backupRoot))
+        }
     }
     catch {
         Write-Warning (Get-ConsoleText "Failed to export the Defender registry keys, continuing anyway: {0}" -FormatArgs @($_.Exception.Message))
@@ -354,6 +455,14 @@ function Invoke-RemoveWindowsDefender {
         & takeown.exe /f $driverFile 2>&1 | Out-Null
         & icacls.exe $driverFile /grant '*S-1-5-32-544:F' 2>&1 | Out-Null
         Remove-Item -LiteralPath $driverFile -Force -ErrorAction SilentlyContinue
+
+        if (Test-Path -LiteralPath $driverFile) {
+            # A driver still mapped by the kernel cannot be deleted by any token. Retry from SYSTEM in
+            # case it is only an ACL problem, otherwise it is reported as a leftover for the next boot.
+            $quotedDriver = $driverFile.Replace('"', '""')
+            $check = { -not (Test-Path -LiteralPath $driverFile) }
+            $null = Invoke-SystemTaskCommand -Command "del /f /q `"$quotedDriver`"" -Completed $check -TimeoutSeconds 15
+        }
     }
 
     # ---- Phase 5: configuration and policy keys ----

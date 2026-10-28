@@ -303,5 +303,7 @@
   "The confirmation dialog could not be shown: {0}": "The confirmation dialog could not be shown: {0}",
   "Microsoft Defender Antivirus removal was skipped: unattended runs must pass -AcceptDefenderRemovalRisk to confirm it.": "Microsoft Defender Antivirus removal was skipped: unattended runs must pass -AcceptDefenderRemovalRisk to confirm it.",
   "Microsoft Defender Antivirus removal was skipped.": "Microsoft Defender Antivirus removal was skipped.",
-  "Microsoft Defender Antivirus cannot be restored by this tool. Use an in-place upgrade or a clean install to bring it back.": "Microsoft Defender Antivirus cannot be restored by this tool. Use an in-place upgrade or a clean install to bring it back."
+  "Microsoft Defender Antivirus cannot be restored by this tool. Use an in-place upgrade or a clean install to bring it back.": "Microsoft Defender Antivirus cannot be restored by this tool. Use an in-place upgrade or a clean install to bring it back.",
+  "Only {0} of {1} registry keys could be exported to {2}. reg.exe may be blocked by an application control policy.": "Only {0} of {1} registry keys could be exported to {2}. reg.exe may be blocked by an application control policy.",
+  "No Defender registry keys were left to back up.": "No Defender registry keys were left to back up."
 }

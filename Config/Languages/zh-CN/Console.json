@@ -303,5 +303,7 @@
   "The confirmation dialog could not be shown: {0}": "无法显示确认窗口：{0}",
   "Microsoft Defender Antivirus removal was skipped: unattended runs must pass -AcceptDefenderRemovalRisk to confirm it.": "已跳过 Microsoft Defender 移除：无人值守运行必须显式传入 -AcceptDefenderRemovalRisk 才能确认。",
   "Microsoft Defender Antivirus removal was skipped.": "已跳过 Microsoft Defender 移除。",
-  "Microsoft Defender Antivirus cannot be restored by this tool. Use an in-place upgrade or a clean install to bring it back.": "本工具无法还原 Microsoft Defender。请通过就地升级或全新安装恢复。"
+  "Microsoft Defender Antivirus cannot be restored by this tool. Use an in-place upgrade or a clean install to bring it back.": "本工具无法还原 Microsoft Defender。请通过就地升级或全新安装恢复。",
+  "Only {0} of {1} registry keys could be exported to {2}. reg.exe may be blocked by an application control policy.": "仅导出 {0}/{1} 个注册表项到 {2}。reg.exe 可能被应用程序控制策略拦截。",
+  "No Defender registry keys were left to back up.": "没有找到需要备份的 Defender 注册表项。"
 }
