@@ -103,7 +103,11 @@ param (
     [switch]$ShowDriveLettersFirst,
     [switch]$ShowDriveLettersLast,
     [switch]$ShowNetworkDriveLettersFirst,
-    [switch]$HideDriveLetters
+    [switch]$HideDriveLetters,
+    # Destructive and not reversible from this tool. Requires typing REMOVE at the prompt, or an
+    # explicit -AcceptDefenderRemovalRisk for unattended runs.
+    [switch]$RemoveWindowsDefender,
+    [switch]$AcceptDefenderRemovalRisk
 )
 
 # ------------------------------------------------------------------------------------------------
@@ -209,10 +213,11 @@ $script:SharedStylesSchema = Join-Path $schemasPath 'SharedStyles.xaml'
 $script:BubbleHintSchema = Join-Path $schemasPath 'BubbleHint.xaml'
 $script:ImportExportConfigSchema = Join-Path $schemasPath 'ImportExportConfigWindow.xaml'
 $script:RestoreBackupWindowSchema = Join-Path $schemasPath 'RestoreBackupWindow.xaml'
+$script:DefenderRemovalConfirmSchema = Join-Path $schemasPath 'DefenderRemovalConfirmWindow.xaml'
 $script:LoadAppsDetailsScriptPath = Join-Path (Join-Path $scriptsPath 'FileIO') 'Import-AppDetailsFromJson.ps1'
 $script:TestAppInWingetListScriptPath = Join-Path (Join-Path $scriptsPath 'AppRemoval') 'Test-AppInWingetList.ps1'
 
-$script:ControlParams = 'WhatIf', 'Confirm', 'Verbose', 'Debug', 'LogPath', 'Language', 'Silent', 'Sysprep', 'User', 'SkipExplorerRestart', 'SkipRegistryBackup', 'RunDefaults', 'RunDefaultsLite', 'RunSavedSettings', 'Config', 'CLI', 'AppRemovalTarget'
+$script:ControlParams = 'WhatIf', 'Confirm', 'Verbose', 'Debug', 'LogPath', 'Language', 'Silent', 'Sysprep', 'User', 'SkipExplorerRestart', 'SkipRegistryBackup', 'RunDefaults', 'RunDefaultsLite', 'RunSavedSettings', 'Config', 'CLI', 'AppRemovalTarget', 'AcceptDefenderRemovalRisk'
 
 # Script-level variables for GUI elements
 $script:GuiWindow = $null
@@ -222,6 +227,9 @@ $script:ApplySubStepCallback = $null
 $script:RegistryImportFailures = 0
 $script:AppRemovalFailures = 0
 $script:AppRemovalVerificationUnavailable = $false
+# Set once the user has typed the confirmation word (or opted in for unattended runs), so the prompt
+# is not repeated when the GUI hands control back to the main script.
+$script:DefenderRemovalConfirmed = $false
 
 # Check if current PowerShell environment is limited by security policies
 if ($ExecutionContext.SessionState.LanguageMode -ne "FullLanguage") {
@@ -398,6 +406,7 @@ if (-not $script:WingetInstalled -and -not $Silent) {
 . "$PSScriptRoot/Scripts/Features/Telemetry-ScheduledTasks.ps1"
 . "$PSScriptRoot/Scripts/Features/Windows-OptionalFeatures.ps1"
 . "$PSScriptRoot/Scripts/Features/Import-RegistryFile.ps1"
+. "$PSScriptRoot/Scripts/Features/Remove-WindowsDefender.ps1"
 . "$PSScriptRoot/Scripts/Features/Replace-StartMenu.ps1"
 . "$PSScriptRoot/Scripts/Features/Invoke-RestartExplorer.ps1"
 
@@ -418,6 +427,7 @@ if (-not $script:WingetInstalled -and -not $Silent) {
 . "$PSScriptRoot/Scripts/GUI/Attach-ShiftClickBehavior.ps1"
 . "$PSScriptRoot/Scripts/GUI/Apply-SettingsToUiControls.ps1"
 . "$PSScriptRoot/Scripts/GUI/Show-MessageBox.ps1"
+. "$PSScriptRoot/Scripts/GUI/Confirm-DefenderRemoval.ps1"
 . "$PSScriptRoot/Scripts/GUI/Show-ImportExportConfigWindow.ps1"
 . "$PSScriptRoot/Scripts/GUI/Show-ApplyModal.ps1"
 . "$PSScriptRoot/Scripts/GUI/Show-AppSelectionWindow.ps1"
@@ -620,6 +630,23 @@ else {
 # If the number of keys in ControlParams equals the number of keys in Params then no modifications/changes were selected
 #  or added by the user, and the script can exit without making any changes.
 if (($controlParamsCount -eq $script:Params.Keys.Count) -or ($script:Params.Keys.Count -eq 1 -and ($script:Params.Keys -contains 'CreateRestorePoint' -or $script:Params.Keys -contains 'Apps'))) {
+    Write-Output (Get-ConsoleText "The script completed without making any changes.")
+    Wait-ForKeyPress
+}
+
+# Defender removal is irreversible, so it is confirmed here rather than inside Invoke-AllChanges:
+# the GUI runs the apply phase in a background runspace that cannot show a dialog. Declining drops
+# only this feature, so the rest of the selection still runs.
+$null = Confirm-DefenderRemovalIfSelected
+
+$hasRemainingChanges = $false
+foreach ($selectedParam in $script:Params.Keys) {
+    if ($script:ControlParams -notcontains $selectedParam -and $selectedParam -ne 'Apps') {
+        $hasRemainingChanges = $true
+        break
+    }
+}
+if (-not $hasRemainingChanges) {
     Write-Output (Get-ConsoleText "The script completed without making any changes.")
     Wait-ForKeyPress
 }

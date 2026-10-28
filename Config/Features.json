@@ -1470,6 +1470,20 @@
       "MaxVersion": null
     },
     {
+      "FeatureId": "RemoveWindowsDefender",
+      "Label": "Permanently remove Microsoft Defender Antivirus. IRREVERSIBLE, NOT RECOMMENDED!",
+      "ToolTip": "Deletes Defender's services, filter and early-launch drivers, policies, scheduled tasks and program folders. Unlike disabling it, this cannot be undone from Win11Debloat: recovery needs an in-place upgrade or a clean install, and a Windows feature upgrade will reinstall Defender. Only use this when a third-party antivirus is already active, or when the machine is intentionally left without an on-access scanner.",
+      "Category": null,
+      "RegistryKey": null,
+      "ApplyText": "Removing Microsoft Defender Antivirus",
+      "UndoLabel": null,
+      "ApplyUndoText": null,
+      "RegistryUndoKey": null,
+      "RequiresReboot": true,
+      "MinVersion": null,
+      "MaxVersion": null
+    },
+    {
       "FeatureId": "HideOnedrive",
       "Label": "Hide 'OneDrive' from navigation pane",
       "ToolTip": "Hides the 'OneDrive' section from the File Explorer navigation pane.",

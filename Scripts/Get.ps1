@@ -105,7 +105,9 @@ param (
     [switch]$ShowDriveLettersFirst,
     [switch]$ShowDriveLettersLast,
     [switch]$ShowNetworkDriveLettersFirst,
-    [switch]$HideDriveLetters
+    [switch]$HideDriveLetters,
+    [switch]$RemoveWindowsDefender,
+    [switch]$AcceptDefenderRemovalRisk
 )
 
 # This launcher is distributed on its own and downloads the project, so it can run with no

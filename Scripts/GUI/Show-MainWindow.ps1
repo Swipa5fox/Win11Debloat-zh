@@ -718,6 +718,11 @@ function Show-MainWindow {
             }
         }
 
+        # Irreversible removal is confirmed on the UI thread, before the apply modal hands the work to
+        # a background runspace that could not show a dialog. Declining drops only this feature, so the
+        # settings saved below reflect what will actually run.
+        $null = Confirm-DefenderRemovalIfSelected -Owner $window
+
         Save-Settings
 
         $restartExplorerCheckBox = $window.FindName('RestartExplorerCheckBox')

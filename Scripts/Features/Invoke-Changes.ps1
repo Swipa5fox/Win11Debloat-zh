@@ -73,6 +73,10 @@ function Invoke-FeatureApply {
             Write-Host "> $applyText..."
             return (Invoke-ForceRemoveEdge)
         }
+        'RemoveWindowsDefender' {
+            Write-Host "> $applyText..."
+            return (Invoke-RemoveWindowsDefender)
+        }
         'DisableWidgets' {
             Write-Host "> $applyText..."
             # Stop widgets related processes before removing the app packages to prevent potential issues
@@ -205,6 +209,12 @@ function Invoke-FeatureUndo {
                 Write-Host "> $undoText..."
                 if (-not (Disable-WindowsFeature 'Microsoft-Windows-Subsystem-Linux')) { return $false }
                 return (Disable-WindowsFeature 'VirtualMachinePlatform')
+            }
+            'RemoveWindowsDefender' {
+                # There is nothing to undo from: the components are deleted, not disabled. An in-place
+                # upgrade (or a feature update) is the only way back.
+                Write-Warning (Get-ConsoleText "Microsoft Defender Antivirus cannot be restored by this tool. Use an in-place upgrade or a clean install to bring it back.")
+                return $false
             }
         }
     }
