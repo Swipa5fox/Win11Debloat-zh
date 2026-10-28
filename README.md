@@ -121,9 +121,11 @@
 
 ```PowerShell
 git remote add upstream https://github.com/Raphire/Win11Debloat.git
-git fetch upstream
+git fetch upstream --no-tags
 git merge upstream/master
 ```
+
+`--no-tags` 是必要的：本仓库只保留自己的版本标签（`v0.1.x`），加上它上游那几十个日期标签才不会被顺手拉进来。
 
 合并后若有新增文案，往 `Config/Languages/zh-CN/` 对应 JSON 里补翻译即可；缺失的键会自动回退英文，不会报错。
 
@@ -147,7 +149,10 @@ Windows 默认把 `.ps1` 关联到编辑器。请双击 `Run.bat`，或用方法
 **脚本能用在 PowerShell 7 吗？**<br>
 不能。脚本会检测并提示退出，请用系统自带的 Windows PowerShell 5.1。
 
-## 致谢与许可
+## 致敬上游
 
-- 上游项目：[Raphire/Win11Debloat](https://github.com/Raphire/Win11Debloat) —— 全部核心功能归上游作者所有，中文语言包与少量适配由本仓库完成。
-- 本项目遵循 [MIT 许可证](./LICENSE)，与上游一致。喜欢这个脚本的话，欢迎给[上游仓库](https://github.com/Raphire/Win11Debloat)点个 Star。
+全部功能代码来自 [@Raphire](https://github.com/Raphire) 的 [Win11Debloat](https://github.com/Raphire/Win11Debloat)，以及该项目[所有贡献者](https://github.com/Raphire/Win11Debloat/graphs/contributors)多年累积的成果。这个仓库只做了一件事：把界面、命令行和提示文字翻成中文，让不习惯英文的人也能用得顺手。没有上游那几百个提交打底，这里一个字也写不出来。
+
+如果这个脚本帮你省了事，请把 Star 给[上游仓库](https://github.com/Raphire/Win11Debloat) —— 真正干活的是他们。
+
+本项目中文化与少量适配遵循 [MIT 许可证](./LICENSE)，与上游一致。
