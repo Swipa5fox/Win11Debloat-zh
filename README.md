@@ -122,7 +122,16 @@
 1. 把 `WinDefend` / `WdFilter` / `WdNisDrv` / `WdBoot` 服务键与 Defender 配置/策略键导出到 `Backups\DefenderRemoval-<时间戳>\*.reg`
 2. 尝试创建系统还原点（不保证成功，失败只警告不中止）
 3. 按「停服务 → 删计划任务 → 删服务注册 → 删驱动文件 → 删配置键 → 删目录」的顺序执行，避免留下指向已删文件的开机驱动
-4. 逐项报告没删掉的条目；被系统保护拒绝时，会改用 SYSTEM 权限的一次性计划任务再试一次
+4. 逐项报告没删掉的条目。Defender 的配置键和 `SecurityHealthService` 服务键的属主是 TrustedInstaller，**SYSTEM 权限也删不掉**，脚本会先把属主改成 Administrators、授予完全控制再删；这之后仍失败的才走 SYSTEM 权限的一次性计划任务重试
+
+### 删到一半中断了怎么办
+
+再跑一次就行。脚本会判断「主服务是否还在」和「还有没有残留」两件事：
+
+- 主服务已不在但仍有残留：进入**残留清理模式**，只处理剩下的条目，不会因为「Defender 不存在」而拒绝
+- 已经完全干净：明确报告「系统中不存在 Microsoft Defender 杀毒组件」并跳过，不会空转
+
+服务管理器可能在重启前一直显示一个 `StartType` 为空的 `SecurityHealthService` 残影，那是内存缓存，不是没删干净。
 
 ### 命令行示例
 
@@ -137,6 +146,8 @@
 ```PowerShell
 .\Win11Debloat.ps1 -RemoveWindowsDefender -WhatIf
 ```
+
+> 命令行模式下脚本跑完会停在「按任意键退出」，这是一层防窗口闪退的保护。写进自动化脚本时记得加 `-Silent`，否则会一直等你按键。
 
 > 这一项是上游没有的，属于本仓库新增功能。上游只做「优化项」，不碰 Defender 的卸载；微软也不支持客户端系统卸载 Defender，所以出问题别指望官方支持。
 

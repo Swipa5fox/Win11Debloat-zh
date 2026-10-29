@@ -305,5 +305,8 @@
   "Microsoft Defender Antivirus removal was skipped.": "Microsoft Defender Antivirus removal was skipped.",
   "Microsoft Defender Antivirus cannot be restored by this tool. Use an in-place upgrade or a clean install to bring it back.": "Microsoft Defender Antivirus cannot be restored by this tool. Use an in-place upgrade or a clean install to bring it back.",
   "Only {0} of {1} registry keys could be exported to {2}. reg.exe may be blocked by an application control policy.": "Only {0} of {1} registry keys could be exported to {2}. reg.exe may be blocked by an application control policy.",
-  "No Defender registry keys were left to back up.": "No Defender registry keys were left to back up."
+  "No Defender registry keys were left to back up.": "No Defender registry keys were left to back up.",
+  "Defender's main service is already gone. Cleaning up {0} leftover item(s).": "Defender's main service is already gone. Cleaning up {0} leftover item(s).",
+  "These leftovers survived the cleanup and will need a reboot or manual removal: {0}": "These leftovers survived the cleanup and will need a reboot or manual removal: {0}",
+  "No Defender leftovers detected.": "No Defender leftovers detected."
 }

@@ -38,7 +38,16 @@ function Get-DefenderRemovalPreflight {
     $service = Get-Service -Name 'WinDefend' -ErrorAction SilentlyContinue
     $serviceKey = 'HKLM:\SYSTEM\CurrentControlSet\Services\WinDefend'
     $programFolder = Join-Path $env:ProgramFiles 'Windows Defender'
-    $defenderPresent = ($null -ne $service) -or (Test-Path -LiteralPath $serviceKey) -or (Test-Path -LiteralPath $programFolder)
+    $installed = ($null -ne $service) -or (Test-Path -LiteralPath $serviceKey) -or (Test-Path -LiteralPath $programFolder)
+
+    # A previous run can stop halfway - services gone, folders and keys left behind. Judging presence by
+    # the service alone would then refuse to clean up exactly the leftovers a retry is meant to finish,
+    # so any Defender trace on the machine counts as present.
+    $residue = @()
+    if (-not $installed) {
+        $residue = @(Get-DefenderResidue)
+    }
+    $defenderPresent = $installed -or ($residue.Count -gt 0)
 
     $tamperProtected = Test-DefenderTamperProtection
     $thirdParty = @(Get-DefenderThirdPartyAntivirus)
@@ -57,11 +66,63 @@ function Get-DefenderRemovalPreflight {
     return [PSCustomObject]@{
         IsAdmin             = $isAdmin
         DefenderPresent     = $defenderPresent
+        Installed           = $installed
+        ResidueOnly         = ($defenderPresent -and -not $installed)
+        Residue             = $residue
         TamperProtected     = $tamperProtected
         ThirdPartyAntivirus = $thirdParty
         IsUnprotected       = ($thirdParty.Count -eq 0)
         Blockers            = $blockers
     }
+}
+
+
+<#
+    .SYNOPSIS
+        Lists every trace of Microsoft Defender still on the machine.
+
+    .DESCRIPTION
+        Used to recognise a half-completed removal. The list covers what the removal deletes: service
+        registrations, policy and configuration keys, the filter/ELAM driver files and the program data
+        folders. An empty result means the machine is already clean and nothing should be attempted.
+
+    .OUTPUTS
+        System.String[]. One entry per leftover, tagged with its kind.
+#>
+function Get-DefenderResidue {
+    $residue = @()
+
+    foreach ($name in Get-DefenderServiceNames) {
+        # The service key is the persistent state. Get-Service keeps returning a ghost entry with an
+        # empty StartType after the key is gone, which would make a cleaned machine look half-removed
+        # until the next reboot.
+        if (Test-Path -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Services\$name") {
+            $residue += "service-key:$name"
+        }
+    }
+
+    foreach ($key in 'HKLM:\SOFTWARE\Microsoft\Windows Defender',
+        'HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender',
+        'HKLM:\SOFTWARE\Microsoft\Windows Defender Security Center') {
+        if (Test-Path -LiteralPath $key) { $residue += "key:$key" }
+    }
+
+    foreach ($driver in 'WdFilter.sys', 'WdNisDrv.sys', 'WdBoot.sys') {
+        if (Test-Path -LiteralPath (Join-Path $env:SystemRoot "System32\drivers\$driver")) {
+            $residue += "driver:$driver"
+        }
+    }
+
+    foreach ($folder in (Join-Path $env:ProgramFiles 'Windows Defender'),
+        (Join-Path $env:ProgramFiles 'Windows Defender Advanced Threat Protection'),
+        (Join-Path $env:ProgramData 'Microsoft\Windows Defender'),
+        (Join-Path $env:ProgramData 'Microsoft\Windows Defender Advanced Threat Protection'),
+        (Join-Path $env:ProgramData 'Microsoft\Windows Defender Support'),
+        (Join-Path $env:ProgramData 'Microsoft\Windows Security Health')) {
+        if (Test-Path -LiteralPath $folder) { $residue += "folder:$folder" }
+    }
+
+    return $residue
 }
 
 
@@ -109,18 +170,26 @@ function Get-DefenderThirdPartyAntivirus {
         System.Boolean
 #>
 function Test-DefenderTamperProtection {
-    try {
-        $status = Get-MpComputerStatus -ErrorAction Stop
-        return [bool]$status.IsTamperProtected
-    }
-    catch { }
+    # The probes are allowed to fail - Defender cmdlets are gone once the removal ran - and the caller
+    # runs with $ErrorActionPreference = 'Stop', so failures are silenced here instead of being written
+    # into the transcript as terminating errors.
+    $previousPreference = $ErrorActionPreference
+    $ErrorActionPreference = 'SilentlyContinue'
 
     try {
-        $features = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows Defender\Features' -Name 'TamperProtection' -ErrorAction Stop
-        return ([int]$features.TamperProtection -eq 5)
-    }
-    catch {
+        try { $status = Get-MpComputerStatus } catch { $status = $null }
+        if ($null -ne $status) { return [bool]$status.IsTamperProtected }
+
+        try {
+            $features = Get-ItemProperty -Path 'HKLM:\SOFTWARE\Microsoft\Windows Defender\Features' -Name 'TamperProtection'
+        }
+        catch { $features = $null }
+        if ($null -ne $features) { return ([int]$features.TamperProtection -eq 5) }
+
         return $false
+    }
+    finally {
+        $ErrorActionPreference = $previousPreference
     }
 }
 
@@ -153,7 +222,160 @@ function Remove-DefenderRegistryKey {
     }
     catch { }
 
+    # TrustedInstaller owns Defender's configuration and the security service key, so an elevated
+    # administrator and even a SYSTEM task get access denied. Taking ownership is what actually works
+    # and it finishes in milliseconds, so it is tried before paying for a scheduled task round-trip.
+    if (Remove-DefenderRegistryKeyWithOwnership -Key $Key) { return $true }
+
     return (Invoke-SystemRegistryDelete -Key $Key)
+}
+
+
+<#
+    .SYNOPSIS
+        Enables a privilege on the token of the current process.
+
+    .DESCRIPTION
+        SeTakeOwnershipPrivilege and SeRestorePrivilege are present in an elevated administrator token
+        but disabled, which is why the registry refuses a TakeOwnership request that looks permitted.
+        AdjustTokenPrivileges turns them on for this process only.
+
+    .OUTPUTS
+        System.Boolean. $true when the privilege is enabled afterwards.
+#>
+function Enable-TokenPrivilege {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Name
+    )
+
+    if (-not ('Win11DebloatTokenPrivilege' -as [type])) {
+        Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+
+public static class Win11DebloatTokenPrivilege
+{
+    [StructLayout(LayoutKind.Sequential, Pack = 1)]
+    private struct TokPriv1Luid
+    {
+        public int Count;
+        public long Luid;
+        public int Attr;
+    }
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool OpenProcessToken(IntPtr process, int access, ref IntPtr token);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool LookupPrivilegeValue(string system, string name, ref long luid);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    private static extern bool AdjustTokenPrivileges(IntPtr token, bool disableAll, ref TokPriv1Luid state, int length, IntPtr previous, IntPtr returnLength);
+
+    [DllImport("kernel32.dll")]
+    private static extern IntPtr GetCurrentProcess();
+
+    private const int SePrivilegeEnabled = 0x2;
+    private const int TokenAdjustPrivileges = 0x20;
+    private const int TokenQuery = 0x8;
+
+    public static bool Enable(string privilege)
+    {
+        IntPtr token = IntPtr.Zero;
+        if (!OpenProcessToken(GetCurrentProcess(), TokenAdjustPrivileges | TokenQuery, ref token)) return false;
+
+        TokPriv1Luid state = new TokPriv1Luid();
+        state.Count = 1;
+        state.Attr = SePrivilegeEnabled;
+        if (!LookupPrivilegeValue(null, privilege, ref state.Luid)) return false;
+        return AdjustTokenPrivileges(token, false, ref state, 0, IntPtr.Zero, IntPtr.Zero);
+    }
+}
+'@
+    }
+
+    return [Win11DebloatTokenPrivilege]::Enable($Name)
+}
+
+
+<#
+    .SYNOPSIS
+        Grants Administrators full control of a registry key and every key below it.
+
+    .DESCRIPTION
+        Ownership is the only thing standing between an elevated process and Defender's remaining keys.
+        The well-known Administrators SID is used instead of a localized group name. Each key is reopened
+        for enumeration because the handle used to rewrite the ACL only carries ChangePermissions.
+#>
+function Grant-DefenderKeyFullControl {
+    param(
+        [Parameter(Mandatory)]
+        [string]$SubKey
+    )
+
+    $hklm = [Microsoft.Win32.Registry]::LocalMachine
+    $administrators = New-Object System.Security.Principal.SecurityIdentifier('S-1-5-32-544')
+
+    $ownerKey = $hklm.OpenSubKey($SubKey, [Microsoft.Win32.RegistryKeyPermissionCheck]::ReadWriteSubTree, [System.Security.AccessControl.RegistryRights]::TakeOwnership)
+    if ($null -eq $ownerKey) { return }
+    $ownerAcl = $ownerKey.GetAccessControl([System.Security.AccessControl.AccessControlSections]::None)
+    $ownerAcl.SetOwner($administrators)
+    $ownerKey.SetAccessControl($ownerAcl)
+    $ownerKey.Close()
+
+    $aclKey = $hklm.OpenSubKey($SubKey, [Microsoft.Win32.RegistryKeyPermissionCheck]::ReadWriteSubTree, [System.Security.AccessControl.RegistryRights]::ChangePermissions)
+    if ($null -eq $aclKey) { return }
+    $acl = $aclKey.GetAccessControl()
+    $rule = New-Object System.Security.AccessControl.RegistryAccessRule(
+        $administrators,
+        [System.Security.AccessControl.RegistryRights]::FullControl,
+        [System.Security.AccessControl.InheritanceFlags]'ContainerInherit, ObjectInherit',
+        [System.Security.AccessControl.PropagationFlags]::None,
+        [System.Security.AccessControl.AccessControlType]::Allow
+    )
+    $acl.SetAccessRule($rule)
+    $aclKey.SetAccessControl($acl)
+    $aclKey.Close()
+
+    $enumKey = $hklm.OpenSubKey($SubKey, [Microsoft.Win32.RegistryKeyPermissionCheck]::ReadSubTree)
+    if ($null -eq $enumKey) { return }
+    $children = @($enumKey.GetSubKeyNames())
+    $enumKey.Close()
+
+    foreach ($child in $children) {
+        Grant-DefenderKeyFullControl -SubKey "$SubKey\$child"
+    }
+}
+
+
+<#
+    .SYNOPSIS
+        Deletes a registry key after taking ownership from TrustedInstaller.
+
+    .OUTPUTS
+        System.Boolean. $true when the key no longer exists.
+#>
+function Remove-DefenderRegistryKeyWithOwnership {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Key
+    )
+
+    if (-not (Test-Path -LiteralPath $Key)) { return $true }
+    if ($Key -notmatch '^HKLM:') { return $false }
+
+    $null = Enable-TokenPrivilege 'SeTakeOwnershipPrivilege'
+    $null = Enable-TokenPrivilege 'SeRestorePrivilege'
+
+    $subKey = $Key -replace '^HKLM:\\', ''
+    try {
+        Grant-DefenderKeyFullControl -SubKey $subKey
+        Remove-Item -LiteralPath $Key -Recurse -Force -ErrorAction Stop
+    }
+    catch { }
+
+    return (-not (Test-Path -LiteralPath $Key))
 }
 
 
@@ -341,6 +563,10 @@ function Invoke-RemoveWindowsDefender {
         return $false
     }
 
+    if ($preflight.ResidueOnly) {
+        Write-Host (Get-ConsoleText "Defender's main service is already gone. Cleaning up {0} leftover item(s)." -FormatArgs @($preflight.Residue.Count)) -ForegroundColor Yellow
+    }
+
     # Every service entry Defender registers, plus anything whose ImagePath points into a Defender
     # folder (MpDefenderCoreService on recent builds). WdFilter/WdNisDrv are file-system filter drivers
     # and WdBoot is the early-launch driver; deleting the service entry before the driver file is what
@@ -490,10 +716,11 @@ function Invoke-RemoveWindowsDefender {
     }
 
     # ---- Report ----
+    # Judged on the service key, not on Get-Service: the service manager keeps a ghost entry whose
+    # StartType is empty after the key is deleted, and that must not read as "still installed".
     $serviceGone = -not (Test-Path -LiteralPath 'HKLM:\SYSTEM\CurrentControlSet\Services\WinDefend')
-    $serviceStillListed = $null -ne (Get-Service -Name 'WinDefend' -ErrorAction SilentlyContinue)
 
-    if ($serviceGone -and -not $serviceStillListed) {
+    if ($serviceGone) {
         Write-Host (Get-ConsoleText "Microsoft Defender Antivirus was removed. Restart Windows to finish cleaning up.") -ForegroundColor Green
     }
     else {
@@ -510,5 +737,15 @@ function Invoke-RemoveWindowsDefender {
         Write-Warning (Get-ConsoleText "These folders could not be deleted: {0}" -FormatArgs @(($failedFolders -join ', ')))
     }
 
-    return ($serviceGone -and -not $serviceStillListed)
+    # TrustedInstaller-owned keys and files mapped by a running driver survive even a SYSTEM retry, so
+    # report what is actually left instead of letting the green success line imply a clean machine.
+    $remaining = @(Get-DefenderResidue)
+    if ($remaining.Count -gt 0) {
+        Write-Warning (Get-ConsoleText "These leftovers survived the cleanup and will need a reboot or manual removal: {0}" -FormatArgs @(($remaining -join ', ')))
+    }
+    else {
+        Write-Host (Get-ConsoleText "No Defender leftovers detected.") -ForegroundColor Green
+    }
+
+    return $serviceGone
 }

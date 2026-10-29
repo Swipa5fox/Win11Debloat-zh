@@ -103,6 +103,75 @@ Describe 'Invoke-RemoveWindowsDefender' {
     }
 }
 
+Describe 'Get-DefenderResidue' {
+    It 'reports a leftover service key even when the service is no longer running' {
+        Mock Get-DefenderServiceNames { @('WinDefend', 'WdFilter') }
+        Mock Test-Path { $true } -ParameterFilter { $LiteralPath -like '*Services\WdFilter' }
+        Mock Test-Path { $false }
+
+        $residue = @(Get-DefenderResidue)
+
+        $residue | Should -Contain 'service-key:WdFilter'
+        $residue | Should -Not -Contain 'service-key:WinDefend'
+    }
+
+    It 'returns nothing on a fully cleaned machine' {
+        Mock Get-DefenderServiceNames { @('WinDefend') }
+        Mock Test-Path { $false }
+
+        $residue = @(Get-DefenderResidue)
+
+        $residue | Should -HaveCount 0
+    }
+}
+
+Describe 'Get-DefenderRemovalPreflight' {
+    It 'recognises a half-finished removal instead of refusing to clean it up' {
+        Mock Test-DefenderRemovalIsAdmin { $true }
+        Mock Get-Service { $null } -ParameterFilter { $Name -eq 'WinDefend' }
+        Mock Get-DefenderServiceNames { @('WinDefend', 'WdFilter') }
+        Mock Test-Path { $false }
+        Mock Test-Path { $true } -ParameterFilter { $LiteralPath -like '*Services\WdFilter' }
+        Mock Get-MpComputerStatus { [pscustomobject]@{ IsTamperProtected = $false } }
+        Mock Get-CimInstance { @([pscustomobject]@{ displayName = 'Kaspersky Standard' }) } -ParameterFilter { $Namespace -eq 'root/SecurityCenter2' }
+
+        $result = Get-DefenderRemovalPreflight
+
+        $result.DefenderPresent | Should -BeTrue
+        $result.Installed | Should -BeFalse
+        $result.ResidueOnly | Should -BeTrue
+        $result.Blockers | Should -HaveCount 0
+    }
+
+    It 'blocks when nothing of Defender is left on the machine' {
+        Mock Test-DefenderRemovalIsAdmin { $true }
+        Mock Get-Service { $null } -ParameterFilter { $Name -eq 'WinDefend' }
+        Mock Get-DefenderServiceNames { @('WinDefend') }
+        Mock Test-Path { $false }
+        Mock Get-MpComputerStatus { [pscustomobject]@{ IsTamperProtected = $false } }
+        Mock Get-CimInstance { @() } -ParameterFilter { $Namespace -eq 'root/SecurityCenter2' }
+
+        $result = Get-DefenderRemovalPreflight
+
+        $result.DefenderPresent | Should -BeFalse
+        $result.Blockers | Should -Contain 'Microsoft Defender Antivirus is not present'
+    }
+}
+
+Describe 'Remove-DefenderRegistryKeyWithOwnership' {
+    It 'leaves keys outside HKLM to the caller' {
+        # Taking ownership only makes sense for machine keys; the guard must not touch the hive.
+        Remove-DefenderRegistryKeyWithOwnership -Key 'HKCU:\Software' | Should -BeFalse
+    }
+}
+
+Describe 'Enable-TokenPrivilege' {
+    It 'rejects an unknown privilege name without throwing' {
+        Enable-TokenPrivilege 'SeNoSuchPrivilegeExists' | Should -BeFalse
+        ('Win11DebloatTokenPrivilege' -as [type]) | Should -Not -BeNullOrEmpty
+    }
+}
+
 Describe 'Confirm-DefenderRemovalIfSelected' {
     BeforeEach {
         $script:DefenderRemovalConfirmed = $false

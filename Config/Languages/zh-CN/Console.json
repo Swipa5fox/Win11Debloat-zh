@@ -305,5 +305,8 @@
   "Microsoft Defender Antivirus removal was skipped.": "已跳过 Microsoft Defender 移除。",
   "Microsoft Defender Antivirus cannot be restored by this tool. Use an in-place upgrade or a clean install to bring it back.": "本工具无法还原 Microsoft Defender。请通过就地升级或全新安装恢复。",
   "Only {0} of {1} registry keys could be exported to {2}. reg.exe may be blocked by an application control policy.": "仅导出 {0}/{1} 个注册表项到 {2}。reg.exe 可能被应用程序控制策略拦截。",
-  "No Defender registry keys were left to back up.": "没有找到需要备份的 Defender 注册表项。"
+  "No Defender registry keys were left to back up.": "没有找到需要备份的 Defender 注册表项。",
+  "Defender's main service is already gone. Cleaning up {0} leftover item(s).": "Defender 主服务已不在，开始清理 {0} 项残留。",
+  "These leftovers survived the cleanup and will need a reboot or manual removal: {0}": "以下残留未能清除，需要重启后再试或手动删除：{0}",
+  "No Defender leftovers detected.": "未检测到 Defender 残留。"
 }
