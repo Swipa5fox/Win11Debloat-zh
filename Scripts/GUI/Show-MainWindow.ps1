@@ -164,6 +164,11 @@ function Show-MainWindow {
     $homeStartBtn = $window.FindName('HomeStartBtn')
     $homeDefaultModeBtn = $window.FindName('HomeDefaultModeBtn')
 
+    # ---- Windows Defender module ----
+    $defenderRemoveCheckBox = $window.FindName('DefenderRemoveCheckBox')
+    $defenderRefreshBtn = $window.FindName('DefenderRefreshBtn')
+    $defenderVerifyBtn = $window.FindName('DefenderVerifyBtn')
+
     # ---- Wire export/import ----
     $exportConfigBtn.Add_Click({
         try {
@@ -178,7 +183,7 @@ function Show-MainWindow {
     $importConfigBtn.Add_Click({
         try {
             Import-Configuration -Owner $window -UsesDarkMode $usesDarkMode -AppsPanel $appsPanel -UiControlMappings $script:UiControlMappings -UserSelectionCombo $userSelectionCombo -OtherUsernameTextBox $otherUsernameTextBox -OnAppsImported { Update-AppSelectionStatus -AppsPanel $appsPanel -AppSelectionStatus $appSelectionStatus -AppRemovalScopeCombo $appRemovalScopeCombo -AppRemovalScopeSection $appRemovalScopeSection -AppRemovalScopeDescription $appRemovalScopeDescription -UserSelectionCombo $userSelectionCombo; Update-AppPresetStates -AppsPanel $appsPanel } -OnImportCompleted {
-                $tabControl.SelectedIndex = 3
+                Select-DeploymentTab -Window $window -TabControl $tabControl
                 Update-NavigationButtons -Window $window -TabControl $tabControl
                 $window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Loaded, [action]{
                     Show-Bubble -TargetControl $reviewChangesBtn -Message (Get-Translation -Key 'BubbleViewChanges')
@@ -634,7 +639,7 @@ function Show-MainWindow {
             Invoke-AppPreset -AppsPanel $appsPanel -MatchFilter { param($c) $c.SelectedByDefault -eq $true } -Exclusive
         }
 
-        $tabControl.SelectedIndex = 3
+        Select-DeploymentTab -Window $window -TabControl $tabControl
         Invoke-NavigationUpdate
 
         $window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Loaded, [action]{
@@ -647,6 +652,14 @@ function Show-MainWindow {
         Hide-Bubble
         Invoke-ShowChangesOverview -Window $window -AppsPanel $appsPanel -ShowCurrentlyAppliedTweaksCheckBox $ShowCurrentlyAppliedTweaksCheckBox
     })
+
+    # ---- Windows Defender module ----
+    if ($defenderRefreshBtn) {
+        $defenderRefreshBtn.Add_Click({ Update-DefenderModule -Window $window })
+    }
+    if ($defenderVerifyBtn) {
+        $defenderVerifyBtn.Add_Click({ Show-DefenderModuleVerification -Window $window })
+    }
 
     # ---- Apply Changes button ----
     $deploymentApplyBtn.Add_Click({
@@ -689,6 +702,14 @@ function Show-MainWindow {
                 continue
             }
             $script:UndoParams[[string]$tweakAction.FeatureId] = $true
+        }
+
+        # The Defender module has its own page, so its checkbox is not part of the dynamic tweak
+        # controls. It joins the parameter set here, before the no-changes check and before the
+        # irreversible-removal confirmation runs.
+        if ($defenderRemoveCheckBox -and $defenderRemoveCheckBox.IsChecked -eq $true) {
+            Add-Parameter 'RemoveWindowsDefender'
+            $null = $selectedForwardFeatureIds.Add('RemoveWindowsDefender')
         }
 
         if (-not $hasAppSelection -and $selectedForwardFeatureIds.Count -eq 0 -and $script:UndoParams.Count -eq 0) {
@@ -743,6 +764,7 @@ function Show-MainWindow {
             $ShowCurrentlyAppliedTweaksCheckBox.IsChecked = $false
         }
         Clear-TweakSelections -Window $window
+        if ($defenderRemoveCheckBox) { $defenderRemoveCheckBox.IsChecked = $false }
         Update-TweakPresetStates -Window $window
     })
 
@@ -753,6 +775,12 @@ function Show-MainWindow {
             New-DynamicTweakControls -Window $window -WinVersion $WinVersion
             Set-CurrentTweakStateInUi -Window $window
             Update-TweaksResponsiveColumns -Window $window
+
+            # The Defender status reads services, CIM and policy keys, so it is filled in after the
+            # window is up instead of delaying the first paint.
+            $window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
+                Update-DefenderModule -Window $window
+            }) | Out-Null
 
             $lastUsedSettingsJson = Import-JsonFile -filePath $script:SavedSettingsFilePath -expectedVersion "1.0" -optionalFile
             $defaultsJson = Import-JsonFile -filePath $script:DefaultSettingsFilePath -expectedVersion "1.0"
@@ -821,9 +849,6 @@ function Show-MainWindow {
 
     # ---- Tab change event ----
     $tabControl.Add_SelectionChanged({
-        if ($tabControl.SelectedIndex -eq ($tabControl.Items.Count - 2)) {
-            New-Overview -Window $window -AppsPanel $appsPanel -ShowCurrentlyAppliedTweaksCheckBox $ShowCurrentlyAppliedTweaksCheckBox | Out-Null
-        }
         Invoke-NavigationUpdate
     })
 

@@ -531,7 +531,7 @@
     },
     "RemoveWindowsDefender": {
       "Label": "彻底移除 Microsoft Defender 杀毒组件。不可撤销，不推荐！",
-      "ToolTip": "删除 Defender 的服务、文件系统过滤驱动与早期启动驱动、策略键、计划任务和程序目录。与“禁用”不同，本项目无法撤销这个操作：恢复需要就地升级或全新安装，而 Windows 功能更新会重新装回 Defender。仅在已启用第三方杀毒软件，或你有意让这台机器没有实时扫描时使用。",
+      "ToolTip": "删除 Defender 的服务注册（含 MsSec* 平台驱动）、文件系统过滤与早期启动驱动、策略与配置键、Shell/COM/WinRT 注册、WebThreatDefense 主机组、开机启动项、防火墙规则、计划任务和程序目录。与“禁用”不同，本项目无法撤销这个操作：恢复需要就地升级或全新安装，而 Windows 功能更新会重新装回 Defender。仅在已启用第三方杀毒软件，或你有意让这台机器没有实时扫描时使用。",
       "ApplyText": "正在彻底移除 Microsoft Defender"
     },
     "HideOnedrive": {

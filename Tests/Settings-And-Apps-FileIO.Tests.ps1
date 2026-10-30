@@ -95,6 +95,18 @@ Describe 'Save-Settings' {
         Should -Invoke Save-ToFile -Times 0 -Exactly
     }
 
+    It 'never saves the irreversible Defender removal into the preset' {
+        $script:Features['RemoveWindowsDefender'] = [PSCustomObject]@{ FeatureId = 'RemoveWindowsDefender' }
+        $script:Params = @{ RemoveWindowsDefender = $true; Feature = 'configured' }
+
+        Save-Settings
+
+        Should -Invoke Save-ToFile -Times 1 -Exactly -ParameterFilter {
+            @($Config.Settings).Count -eq 1 -and
+            $Config.Settings[0].Name -eq 'Feature'
+        }
+    }
+
     It 'reports a persistence failure without throwing' {
         $script:Params = @{ Feature = $true }
         Mock Save-ToFile { $false }

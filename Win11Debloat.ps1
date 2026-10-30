@@ -107,7 +107,9 @@ param (
     # Destructive and not reversible from this tool. Requires typing REMOVE at the prompt, or an
     # explicit -AcceptDefenderRemovalRisk for unattended runs.
     [switch]$RemoveWindowsDefender,
-    [switch]$AcceptDefenderRemovalRisk
+    [switch]$AcceptDefenderRemovalRisk,
+    # Read-only: prints what the removal left behind and exits.
+    [switch]$VerifyDefenderRemoval
 )
 
 # ------------------------------------------------------------------------------------------------
@@ -143,8 +145,10 @@ $isAdmin = ([Security.Principal.WindowsPrincipal] `
     [Security.Principal.WindowsIdentity]::GetCurrent()
 ).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)
 
-# If script is not running as administrator, relaunch it elevated without prompting
-if (-not $isAdmin) {
+# If script is not running as administrator, relaunch it elevated without prompting.
+# The Defender verification only reads HKLM and the file system, so it runs unelevated rather than
+# raising a UAC prompt just to print a report.
+if (-not $isAdmin -and -not $VerifyDefenderRemoval) {
     Write-Host (Get-ConsoleText "Win11Debloat must be run as Administrator. Requesting elevation...") -ForegroundColor Yellow
 
     # Win32-safe escaping for arguments to pass to elevated process
@@ -217,7 +221,7 @@ $script:DefenderRemovalConfirmSchema = Join-Path $schemasPath 'DefenderRemovalCo
 $script:LoadAppsDetailsScriptPath = Join-Path (Join-Path $scriptsPath 'FileIO') 'Import-AppDetailsFromJson.ps1'
 $script:TestAppInWingetListScriptPath = Join-Path (Join-Path $scriptsPath 'AppRemoval') 'Test-AppInWingetList.ps1'
 
-$script:ControlParams = 'WhatIf', 'Confirm', 'Verbose', 'Debug', 'LogPath', 'Language', 'Silent', 'Sysprep', 'User', 'SkipExplorerRestart', 'SkipRegistryBackup', 'RunDefaults', 'RunDefaultsLite', 'RunSavedSettings', 'Config', 'CLI', 'AppRemovalTarget', 'AcceptDefenderRemovalRisk'
+$script:ControlParams = 'WhatIf', 'Confirm', 'Verbose', 'Debug', 'LogPath', 'Language', 'Silent', 'Sysprep', 'User', 'SkipExplorerRestart', 'SkipRegistryBackup', 'RunDefaults', 'RunDefaultsLite', 'RunSavedSettings', 'Config', 'CLI', 'AppRemovalTarget', 'AcceptDefenderRemovalRisk', 'VerifyDefenderRemoval'
 
 # Script-level variables for GUI elements
 $script:GuiWindow = $null
@@ -439,6 +443,7 @@ if (-not $script:WingetInstalled -and -not $Silent) {
 . "$PSScriptRoot/Scripts/GUI/MainWindow-TweaksBuilder.ps1"
 . "$PSScriptRoot/Scripts/GUI/MainWindow-Navigation.ps1"
 . "$PSScriptRoot/Scripts/GUI/MainWindow-Deployment.ps1"
+. "$PSScriptRoot/Scripts/GUI/MainWindow-Defender.ps1"
 . "$PSScriptRoot/Scripts/GUI/Show-MainWindow.ps1"
 . "$PSScriptRoot/Scripts/GUI/Show-AboutDialog.ps1"
 . "$PSScriptRoot/Scripts/GUI/Show-Bubble.ps1"
@@ -489,6 +494,16 @@ $script:ModernStandbySupported = Test-ModernStandbySupport
 
 $script:Params = $PSBoundParameters
 $script:UndoParams = @{}
+
+# Read-only self-check: report what the Defender removal left behind and exit. Handled before mode
+# selection so it never applies anything, and so it can be run right after the reboot that follows a
+# removal.
+if ($script:Params.ContainsKey('VerifyDefenderRemoval')) {
+    if (-not (Show-DefenderRemovalReport)) {
+        Wait-ForKeyPress -ExitCode 1
+    }
+    Wait-ForKeyPress
+}
 
 # Add default Apps parameter when RemoveApps is requested and Apps was not explicitly provided
 if ((-not $script:Params.ContainsKey("Apps")) -and $script:Params.ContainsKey("RemoveApps")) {

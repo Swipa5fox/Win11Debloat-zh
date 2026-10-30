@@ -25,14 +25,14 @@
 
 | 部分 | 内容 | 数量 |
 |---|---|---|
-| 图形界面 | 主窗口、应用选择、应用进度、导入导出、还原备份、消息框、关于、气泡提示、Defender 移除确认共 9 个窗体 | 327 条界面文案 |
+| 图形界面 | 主窗口（含 Windows Defender 模块页）、应用选择、应用进度、导入导出、还原备份、消息框、关于、气泡提示、Defender 移除确认共 9 个窗体 | 366 条界面文案 |
 | 功能项 | 每个功能的名称 / 说明 / 执行中 / 撤销 / 撤销中文案，外加 UI 分组 | 104 项 + 10 分组 |
 | 应用列表 | 预装应用的移除建议说明（含 HP / Dell / Lenovo 等 OEM 应用） | 141 条 |
 | 优化项分类 | 系统优化页 12 个分类的标题 | 12 条 |
-| 命令行模式 | 菜单、选项、确认提示、错误提示 | 305 条 |
+| 命令行模式 | 菜单、选项、确认提示、错误提示、Defender 残留检查 | 332 条 |
 | 启动器 | `Run.bat` 与一键下载脚本按系统语言自动切换 | — |
 
-合计约 **900 条**文案，全部中文化。
+合计约 **950 条**文案，全部中文化。
 
 ## 系统要求
 
@@ -94,12 +94,25 @@
 | `-Sysprep` | 把更改写入 Windows 默认配置文件，新用户自动生效（进阶） |
 | `-RemoveWindowsDefender` | **彻底移除** Microsoft Defender（不可撤销，见下节） |
 | `-AcceptDefenderRemovalRisk` | 无人值守（`-Silent`）时确认移除 Defender 的风险 |
+| `-VerifyDefenderRemoval` | 只读检查 Defender 是否还有残留，不改动任何东西 |
 
 完整的 100 多个开关（每项优化都有对应参数）见 `Win11Debloat.ps1` 顶部的 `param` 块，一般用不到手动指定——界面里勾选即可。
 
 ## 彻底移除 Microsoft Defender（危险操作）
 
-界面里叫「彻底移除 Microsoft Defender 杀毒组件」，命令行是 `-RemoveWindowsDefender`。**它删组件，不是关开关**：服务（`WinDefend`、`WdNisSvc`、`Sense`、`SecurityHealthService`）、文件系统过滤驱动与早期启动驱动（`WdFilter`、`WdNisDrv`、`WdBoot`）、策略键、计划任务、程序目录一并删除。
+图形界面里有一个独立的「Windows Defender」页，命令行是 `-RemoveWindowsDefender`。**它删组件，不是关开关**：服务注册（`WinDefend`、`WdNisSvc`、`Sense`、`SecurityHealthService`，以及新版才有的 `MsSecCore` / `MsSecFlt` / `MsSecWfp` 平台驱动）、文件系统过滤与早期启动驱动（`WdFilter`、`WdNisDrv`、`WdBoot`）、策略与配置键、Shell/COM/WinRT 注册、`WebThreatDefense` 主机组、开机启动项、防火墙规则、计划任务、程序目录一并删除。
+
+### 界面里的 Defender 模块
+
+主窗口从「系统优化」往后翻一页就是，分三块：
+
+| 区块 | 作用 |
+|---|---|
+| **当前状态** | 显示「已安装 / 仅剩残留 / 未安装」，以及篡改保护是否开启、有没有第三方杀毒软件。残留会给出具体条目数 |
+| **彻底移除** | 勾选后随「应用更改」一起执行；执行前仍会弹出确认窗口，要求输入 `REMOVE` |
+| **残留检查** | 只读检查，按服务、注册表、启动项、COM、驱动、目录、计划任务、防火墙、一致性分组列出还没清掉的东西，红色是阻塞项、黄色是残留项 |
+
+没有任何 Defender 组件时，「彻底移除」会自动置灰，避免点了也跑不动。
 
 ### 执行前必须知道
 
@@ -121,8 +134,18 @@
 
 1. 把 `WinDefend` / `WdFilter` / `WdNisDrv` / `WdBoot` 服务键与 Defender 配置/策略键导出到 `Backups\DefenderRemoval-<时间戳>\*.reg`
 2. 尝试创建系统还原点（不保证成功，失败只警告不中止）
-3. 按「停服务 → 删计划任务 → 删服务注册 → 删驱动文件 → 删配置键 → 删目录」的顺序执行，避免留下指向已删文件的开机驱动
+3. 按「停服务 → 删计划任务 → 删服务注册 → 删驱动文件 → 删配置与外壳注册 → 删开机启动项 → 删防火墙规则 → 删目录」的顺序执行，避免留下指向已删文件的开机驱动
 4. 逐项报告没删掉的条目。Defender 的配置键和 `SecurityHealthService` 服务键的属主是 TrustedInstaller，**SYSTEM 权限也删不掉**，脚本会先把属主改成 Administrators、授予完全控制再删；这之后仍失败的才走 SYSTEM 权限的一次性计划任务重试
+
+### 移除后自查
+
+重启后可以跑一次只读检查，它不会改动任何东西：
+
+```PowerShell
+.\Win11Debloat.ps1 -VerifyDefenderRemoval
+```
+
+输出按「服务与驱动注册 / 注册表项 / 开机启动项 / COM 组件注册 / 驱动文件 / 程序目录 / 计划任务 / 防火墙规则 / 一致性检查」分组，末尾给出「正常 / 警告 / 失败」计数；有阻塞项时退出码为 1，方便写进自动化脚本。图形界面里的「残留检查」块是同一个数据源。
 
 ### 删到一半中断了怎么办
 
@@ -172,7 +195,7 @@
 | 非管理员自动提权 | 不再询问 `y/n`，直接请求 UAC（上游需手动确认） |
 | `Run-Tests.ps1` 固定测试语言 | Pester 断言依赖英文原文，测试时固定 en-US，不影响正常运行（该脚本仅用于自检，使用者无需运行） |
 | 反馈入口指向本仓库 | `Run.bat` 的 issue 提示、主窗口「反馈问题」菜单、应用失败时的上报按钮，均指向本仓库 issues（上游 Wiki 链接保留，因为说明文档仍在上游） |
-| 新增「彻底移除 Microsoft Defender」 | 上游没有的功能：删除 Defender 的服务、驱动、策略、任务与目录，不可撤销。入口在主窗口优化列表末尾与 `-RemoveWindowsDefender`，带 `REMOVE` 输入确认 |
+| 新增「彻底移除 Microsoft Defender」 | 上游没有的功能：删除 Defender 的服务、驱动、策略、外壳/COM/WinRT 注册、防火墙规则、任务与目录，不可撤销。入口是主窗口独立的「Windows Defender」页与 `-RemoveWindowsDefender`，带 `REMOVE` 输入确认；另有只读的 `-VerifyDefenderRemoval` 自查入口 |
 
 ## 同步上游更新
 

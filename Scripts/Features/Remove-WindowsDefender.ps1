@@ -101,24 +101,15 @@ function Get-DefenderResidue {
         }
     }
 
-    foreach ($key in 'HKLM:\SOFTWARE\Microsoft\Windows Defender',
-        'HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender',
-        'HKLM:\SOFTWARE\Microsoft\Windows Defender Security Center') {
+    foreach ($key in @(Get-DefenderRegistryKeyTargets) + @(Get-DefenderClsidTargets) + @(Get-DefenderRuntimeClassKeys) + @(Get-DefenderUbpmTargets)) {
         if (Test-Path -LiteralPath $key) { $residue += "key:$key" }
     }
 
-    foreach ($driver in 'WdFilter.sys', 'WdNisDrv.sys', 'WdBoot.sys') {
-        if (Test-Path -LiteralPath (Join-Path $env:SystemRoot "System32\drivers\$driver")) {
-            $residue += "driver:$driver"
-        }
+    foreach ($driver in Get-DefenderDriverFiles) {
+        if (Test-Path -LiteralPath $driver) { $residue += "driver:$driver" }
     }
 
-    foreach ($folder in (Join-Path $env:ProgramFiles 'Windows Defender'),
-        (Join-Path $env:ProgramFiles 'Windows Defender Advanced Threat Protection'),
-        (Join-Path $env:ProgramData 'Microsoft\Windows Defender'),
-        (Join-Path $env:ProgramData 'Microsoft\Windows Defender Advanced Threat Protection'),
-        (Join-Path $env:ProgramData 'Microsoft\Windows Defender Support'),
-        (Join-Path $env:ProgramData 'Microsoft\Windows Security Health')) {
+    foreach ($folder in Get-DefenderFolderTargets) {
         if (Test-Path -LiteralPath $folder) { $residue += "folder:$folder" }
     }
 
@@ -519,7 +510,11 @@ function Remove-DefenderFolder {
 function Get-DefenderServiceNames {
     $known = @(
         'WinDefend', 'WdNisSvc', 'Sense', 'SecurityHealthService', 'MpDefenderCoreService',
-        'WdFilter', 'WdNisDrv', 'WdBoot', 'webthreatdefsvc', 'webthreatdefusersvc'
+        'WdFilter', 'WdNisDrv', 'WdBoot', 'webthreatdefsvc', 'webthreatdefusersvc',
+        # Defender platform drivers that recent builds register next to the antivirus. Their
+        # ImagePath points at System32\drivers rather than a Defender folder, so the path scan
+        # below cannot recognise them, and leaving them behind keeps the platform half-installed.
+        'MsSecCore', 'MsSecFlt', 'MsSecWfp'
     )
 
     $discovered = @()
@@ -540,15 +535,509 @@ function Get-DefenderServiceNames {
 
 <#
     .SYNOPSIS
+        Lists the registry keys that exist only because Microsoft Defender is installed.
+
+    .DESCRIPTION
+        Deleting the services alone leaves the shell, COM and WinRT registration behind, which is what
+        makes a "removed" Defender still show up in Windows Security and in the context menu. The list
+        is shared by the removal, the residue check and the verification report so all three agree on
+        what counts as removed.
+
+        Keys are deleted whole; single values (Run entries, the Svchost host group) are handled by
+        Get-DefenderRegistryValueTargets, and the per-class COM registration by Get-DefenderClsidTargets.
+
+    .OUTPUTS
+        System.String[]
+#>
+function Get-DefenderRegistryKeyTargets {
+    return @(
+        # Configuration and policy
+        'HKLM:\SOFTWARE\Microsoft\Windows Defender',
+        'HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender',
+        'HKLM:\SOFTWARE\Microsoft\Windows Defender Security Center',
+        # Windows Security: the app's registration, its COM class and its Control Panel entry
+        'HKLM:\SOFTWARE\Microsoft\Windows Security Health',
+        'HKLM:\SOFTWARE\Classes\CLSID\{BB64F8A7-BEE7-4E1A-AB8D-7D8273F7FDB6}',
+        'HKLM:\SOFTWARE\Classes\WOW6432Node\CLSID\{BB64F8A7-BEE7-4E1A-AB8D-7D8273F7FDB6}',
+        'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\ControlPanel\NameSpace\{BB64F8A7-BEE7-4E1A-AB8D-7D8273F7FDB6}',
+        # Web threat defence: the service is gone, its host group and WinRT server are not
+        'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Svchost\WebThreatDefense',
+        'HKLM:\SOFTWARE\Microsoft\WindowsRuntime\Server\WebThreatDefSvc',
+        # Event tracing sessions Defender registers at install time
+        'HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\DefenderAuditLogger',
+        'HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\DefenderApiLogger',
+        # Shell registration: AppUserModelId, the WindowsDefender progid and the AppX class
+        'HKLM:\SOFTWARE\Classes\AppUserModelId\Windows.Defender',
+        'HKLM:\SOFTWARE\Classes\AppUserModelId\Microsoft.Windows.Defender',
+        'HKLM:\SOFTWARE\Classes\WindowsDefender',
+        'HKLM:\SOFTWARE\Classes\AppX9kvz3rdv8t7twanaezbwfcdgrbg3bck0'
+    )
+}
+
+
+<#
+    .SYNOPSIS
+        Lists the COM classes Defender registers.
+
+    .DESCRIPTION
+        These classes back the shell integration and the Windows Security UI. A GUID that is not
+        present is skipped by the caller, and HKCR is only a merged view over HKLM\SOFTWARE\Classes,
+        so deleting there would be the same operation twice.
+
+    .OUTPUTS
+        System.String[]. Registry paths, not bare GUIDs.
+#>
+function Get-DefenderClsidTargets {
+    $guids = @(
+        '{2781761E-28E0-4109-99FE-B9D127C57AFE}',
+        '{2781761E-28E2-4109-99FE-B9D127C57AFE}',
+        '{195B4D07-3DE2-4744-BBF2-D90121AE785B}',
+        '{361290c0-cb1b-49ae-9f3e-ba1cbe5dab35}',
+        '{45F2C32F-ED16-4C94-8493-D72EF93A051B}',
+        '{6CED0DAA-4CDE-49C9-BA3A-AE163DC3D7AF}',
+        '{8a696d12-576b-422e-9712-01b9dd84b446}',
+        '{8C9C0DB7-2CBA-40F1-AFE0-C55740DD91A0}',
+        '{A2D75874-6750-4931-94C1-C99D3BC9D0C7}',
+        '{A7C452EF-8E9F-42EB-9F2B-245613CA0DC9}',
+        '{DACA056E-216A-4FD1-84A6-C306A017ECEC}',
+        '{E3C9166D-1D39-4D4E-A45D-BC7BE9B00578}',
+        '{F6976CF5-68A8-436C-975A-40BE53616D59}'
+    )
+
+    $targets = @()
+    foreach ($guid in $guids) {
+        foreach ($root in 'HKLM:\SOFTWARE\Classes\CLSID', 'HKLM:\SOFTWARE\Classes\WOW6432Node\CLSID') {
+            $targets += "$root\$guid"
+        }
+    }
+    return $targets
+}
+
+
+<#
+    .SYNOPSIS
+        Lists the WinRT classes that belong to web threat defence.
+
+    .DESCRIPTION
+        The classes are named per component and change between builds, so they are discovered by
+        name instead of being hardcoded.
+
+    .OUTPUTS
+        System.String[]. Registry paths.
+#>
+function Get-DefenderRuntimeClassKeys {
+    $root = 'HKLM:\SOFTWARE\Microsoft\WindowsRuntime\ActivatableClassId'
+    $keys = @()
+    try {
+        foreach ($child in Get-ChildItem -LiteralPath $root -ErrorAction SilentlyContinue) {
+            if ($child.PSChildName -match '(?i)webthreatdefense') {
+                $keys += "$root\$($child.PSChildName)"
+            }
+        }
+    }
+    catch { }
+
+    return $keys
+}
+
+
+<#
+    .SYNOPSIS
+        Lists the Ubpm maintenance entries Defender registers.
+
+    .OUTPUTS
+        System.String[]. Registry paths.
+#>
+function Get-DefenderUbpmTargets {
+    $root = 'HKLM:\SYSTEM\CurrentControlSet\Control\Ubpm'
+    $keys = @()
+    try {
+        foreach ($child in Get-ChildItem -LiteralPath $root -ErrorAction SilentlyContinue) {
+            if ($child.PSChildName -match '(?i)defender') {
+                $keys += "$root\$($child.PSChildName)"
+            }
+        }
+    }
+    catch { }
+
+    return $keys
+}
+
+
+<#
+    .SYNOPSIS
+        Lists the individual registry values Defender writes outside its own keys.
+
+    .DESCRIPTION
+        Autostart entries and the Svchost host group are values inside keys that belong to Windows
+        itself, so they are deleted by name rather than by deleting the key. Only the current user's
+        HKCU is handled: loading another user's hive to look for a stale Defender autostart entry is
+        more invasive than the entry is worth.
+
+    .OUTPUTS
+        PSCustomObject[]. One entry per key, with the value names to delete.
+#>
+function Get-DefenderRegistryValueTargets {
+    $autostartNames = @('WindowsDefender', 'Windows Defender', 'SecurityHealth')
+
+    return @(
+        [PSCustomObject]@{ Key = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'; Names = $autostartNames },
+        [PSCustomObject]@{ Key = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'; Names = $autostartNames },
+        [PSCustomObject]@{ Key = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run'; Names = $autostartNames },
+        [PSCustomObject]@{ Key = 'HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\StartupApproved\Run'; Names = $autostartNames },
+        # The Svchost value names the service group; the group key is deleted with the other keys.
+        [PSCustomObject]@{ Key = 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Svchost'; Names = @('WebThreatDefense') }
+    )
+}
+
+
+<#
+    .SYNOPSIS
+        Tests whether a registry value exists.
+
+    .OUTPUTS
+        System.Boolean
+#>
+function Test-DefenderRegistryValue {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Key,
+        [Parameter(Mandatory)]
+        [string]$Name
+    )
+
+    if (-not (Test-Path -LiteralPath $Key)) { return $false }
+    try {
+        $null = Get-ItemProperty -LiteralPath $Key -Name $Name -ErrorAction Stop
+        return $true
+    }
+    catch {
+        return $false
+    }
+}
+
+
+<#
+    .SYNOPSIS
+        Deletes a single registry value and reports whether it is gone.
+
+    .OUTPUTS
+        System.Boolean. $true when the value or the whole key is absent afterwards.
+#>
+function Remove-DefenderRegistryValue {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Key,
+        [Parameter(Mandatory)]
+        [string]$Name
+    )
+
+    if (-not (Test-Path -LiteralPath $Key)) { return $true }
+    if (-not (Test-DefenderRegistryValue -Key $Key -Name $Name)) { return $true }
+
+    try {
+        Remove-ItemProperty -LiteralPath $Key -Name $Name -Force -ErrorAction Stop
+    }
+    catch { }
+
+    return (-not (Test-DefenderRegistryValue -Key $Key -Name $Name))
+}
+
+
+<#
+    .SYNOPSIS
+        Lists the firewall rule values that belong to Defender or web threat defence.
+
+    .DESCRIPTION
+        Firewall rules are stored as values, not as keys: the value name is either the rule name
+        (WindowsDefender-1, WebThreatDefSvc_Allow_In, ...) or a GUID whose data is a rule blob. The
+        blob is UTF-16 text holding the program path, so the Defender entries are recognised by
+        content rather than by a hardcoded GUID list that changes between builds.
+
+    .OUTPUTS
+        System.String[]. Value names inside the given key.
+#>
+function Get-DefenderFirewallRuleNames {
+    param(
+        [Parameter(Mandatory)]
+        [string]$Key
+    )
+
+    $names = @()
+    if (-not (Test-Path -LiteralPath $Key)) { return $names }
+
+    try {
+        $properties = Get-ItemProperty -LiteralPath $Key -ErrorAction Stop
+    }
+    catch {
+        return $names
+    }
+
+    foreach ($property in $properties.PSObject.Properties) {
+        # Get-ItemProperty adds PSPath/PSParentPath/PSChildName/PSDrive/PSProvider to the output.
+        if ($property.Name -like 'PS*') { continue }
+
+        if ($property.Name -match '(?i)^WindowsDefender(-?\d+)?$' -or $property.Name -match '(?i)^WebThreatDefSvc') {
+            $names += $property.Name
+            continue
+        }
+
+        if ($property.Value -is [byte[]]) {
+            $blob = ''
+            try { $blob = [System.Text.Encoding]::Unicode.GetString($property.Value) } catch { }
+            if ($blob -match '(?i)windows defender|webthreatdef') { $names += $property.Name }
+        }
+    }
+
+    return $names
+}
+
+
+<#
+    .SYNOPSIS
+        Deletes the firewall rule values that belong to Defender.
+
+    .OUTPUTS
+        PSCustomObject with Removed (count) and Failed (value names).
+#>
+function Remove-DefenderFirewallRules {
+    $keys = @(
+        'HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\RestrictedServices\Static\System',
+        'HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\RestrictedServices\Configurable\System'
+    )
+
+    $removed = 0
+    $failed = @()
+
+    foreach ($key in $keys) {
+        $names = @(Get-DefenderFirewallRuleNames -Key $key)
+        if ($names.Count -eq 0) { continue }
+
+        # These keys are owned by TrustedInstaller and grant Administrators read access only, so the
+        # delete is attempted first and the key is taken over only when it is actually refused.
+        # Deleting the whole key is not an option: it also holds rules owned by other components.
+        $ownershipTaken = $false
+
+        foreach ($name in $names) {
+            try {
+                Remove-ItemProperty -LiteralPath $key -Name $name -Force -ErrorAction Stop
+                $removed++
+                continue
+            }
+            catch { }
+
+            if (-not $ownershipTaken) {
+                $null = Enable-TokenPrivilege 'SeTakeOwnershipPrivilege'
+                $null = Enable-TokenPrivilege 'SeRestorePrivilege'
+                try { Grant-DefenderKeyFullControl -SubKey ($key -replace '^HKLM:\\', '') } catch { }
+                $ownershipTaken = $true
+            }
+
+            try {
+                Remove-ItemProperty -LiteralPath $key -Name $name -Force -ErrorAction Stop
+                $removed++
+            }
+            catch {
+                $failed += $name
+            }
+        }
+    }
+
+    return [PSCustomObject]@{
+        Removed = $removed
+        Failed  = $failed
+    }
+}
+
+
+<#
+    .SYNOPSIS
+        Lists the scheduled tasks Defender registers.
+
+    .OUTPUTS
+        System.String[]. Task names, or an empty array when the task service cannot be queried.
+#>
+function Get-DefenderScheduledTaskNames {
+    $names = @()
+    foreach ($path in '\Microsoft\Windows\Windows Defender\*', '\Microsoft\Windows\Defender\*') {
+        try {
+            foreach ($task in @(Get-ScheduledTask -TaskPath $path -ErrorAction SilentlyContinue)) {
+                if ($task) { $names += [string]$task.TaskName }
+            }
+        }
+        catch { }
+    }
+
+    return $names
+}
+
+
+<#
+    .SYNOPSIS
+        Lists the filter, ELAM and platform driver files Defender installs.
+
+    .OUTPUTS
+        System.String[]. Absolute paths.
+#>
+function Get-DefenderDriverFiles {
+    return @(
+        'WdFilter.sys', 'WdNisDrv.sys', 'WdBoot.sys',
+        # Platform drivers registered by the MsSec* services
+        'msseccore.sys', 'mssecflt.sys', 'mssecwfp.sys'
+    ) | ForEach-Object { Join-Path $env:SystemRoot "System32\drivers\$_" }
+}
+
+
+<#
+    .SYNOPSIS
+        Lists the program and data folders Defender owns.
+
+    .OUTPUTS
+        System.String[]. Absolute paths.
+#>
+function Get-DefenderFolderTargets {
+    return @(
+        (Join-Path $env:ProgramFiles 'Windows Defender'),
+        (Join-Path $env:ProgramFiles 'Windows Defender Advanced Threat Protection'),
+        (Join-Path $env:ProgramData 'Microsoft\Windows Defender'),
+        (Join-Path $env:ProgramData 'Microsoft\Windows Defender Advanced Threat Protection'),
+        (Join-Path $env:ProgramData 'Microsoft\Windows Defender Support'),
+        (Join-Path $env:ProgramData 'Microsoft\Windows Security Health')
+    )
+}
+
+
+<#
+    .SYNOPSIS
+        Reports what is still on the machine after a Defender removal, grouped and judged.
+
+    .DESCRIPTION
+        A read-only counterpart to Invoke-RemoveWindowsDefender, meant to be run after a restart.
+        Status is Fail when a component that should be deleted is still registered, Warn when a
+        leftover needs a reboot or a manual delete, and Ok otherwise.
+
+    .OUTPUTS
+        PSCustomObject[]. One row per checked item with Group, Item and Status.
+#>
+function Get-DefenderRemovalReport {
+    $rows = New-Object System.Collections.Generic.List[object]
+
+    foreach ($name in Get-DefenderServiceNames) {
+        $status = if (Test-Path -LiteralPath "HKLM:\SYSTEM\CurrentControlSet\Services\$name") { 'Fail' } else { 'Ok' }
+        $rows.Add([PSCustomObject]@{ Group = 'DefenderCheckServices'; Item = $name; Status = $status })
+    }
+
+    foreach ($key in @(Get-DefenderRegistryKeyTargets) + @(Get-DefenderRuntimeClassKeys) + @(Get-DefenderUbpmTargets)) {
+        $status = if (Test-Path -LiteralPath $key) { 'Fail' } else { 'Ok' }
+        $rows.Add([PSCustomObject]@{ Group = 'DefenderCheckRegistry'; Item = $key; Status = $status })
+    }
+
+    foreach ($target in Get-DefenderRegistryValueTargets) {
+        foreach ($name in $target.Names) {
+            $status = if (Test-DefenderRegistryValue -Key $target.Key -Name $name) { 'Warn' } else { 'Ok' }
+            $rows.Add([PSCustomObject]@{ Group = 'DefenderCheckStartup'; Item = "$($target.Key)\$name"; Status = $status })
+        }
+    }
+
+    # A COM class left behind is not a running component, so it is a leftover rather than a failure.
+    foreach ($key in Get-DefenderClsidTargets) {
+        $status = if (Test-Path -LiteralPath $key) { 'Warn' } else { 'Ok' }
+        $rows.Add([PSCustomObject]@{ Group = 'DefenderCheckCom'; Item = $key; Status = $status })
+    }
+
+    foreach ($driver in Get-DefenderDriverFiles) {
+        $status = if (Test-Path -LiteralPath $driver) { 'Warn' } else { 'Ok' }
+        $rows.Add([PSCustomObject]@{ Group = 'DefenderCheckDrivers'; Item = (Split-Path -Leaf $driver); Status = $status })
+    }
+
+    foreach ($folder in Get-DefenderFolderTargets) {
+        $status = if (Test-Path -LiteralPath $folder) { 'Warn' } else { 'Ok' }
+        $rows.Add([PSCustomObject]@{ Group = 'DefenderCheckFolders'; Item = $folder; Status = $status })
+    }
+
+    foreach ($task in Get-DefenderScheduledTaskNames) {
+        $rows.Add([PSCustomObject]@{ Group = 'DefenderCheckTasks'; Item = $task; Status = 'Warn' })
+    }
+
+    foreach ($key in @(
+            'HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\RestrictedServices\Static\System',
+            'HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\RestrictedServices\Configurable\System'
+        )) {
+        foreach ($name in Get-DefenderFirewallRuleNames -Key $key) {
+            $rows.Add([PSCustomObject]@{ Group = 'DefenderCheckFirewall'; Item = $name; Status = 'Warn' })
+        }
+    }
+
+    # Consistency: state that contradicts itself, rather than an item that simply survived.
+    if (-not (Test-Path -LiteralPath 'HKLM:\SYSTEM\CurrentControlSet\Services\WinDefend')) {
+        $ghost = Get-Service -Name 'WinDefend' -ErrorAction SilentlyContinue
+        if ($null -ne $ghost) {
+            $rows.Add([PSCustomObject]@{ Group = 'DefenderCheckConsistency'; Item = 'WinDefend is still listed by the service control manager'; Status = 'Warn' })
+        }
+    }
+
+    if ($null -ne (Get-Process -Name 'MsMpEng' -ErrorAction SilentlyContinue)) {
+        $rows.Add([PSCustomObject]@{ Group = 'DefenderCheckConsistency'; Item = 'MsMpEng is still running'; Status = 'Fail' })
+    }
+
+    return @($rows.ToArray())
+}
+
+
+<#
+    .SYNOPSIS
+        Prints the Defender removal report to the console.
+
+    .OUTPUTS
+        System.Boolean. $true when no item is reported as failed.
+#>
+function Show-DefenderRemovalReport {
+    $rows = @(Get-DefenderRemovalReport)
+
+    Write-Host ""
+    Write-Host (Get-ConsoleText "Microsoft Defender removal check") -ForegroundColor Cyan
+
+    foreach ($group in @($rows | Group-Object -Property Group)) {
+        $failed = @($group.Group | Where-Object { $_.Status -eq 'Fail' }).Count
+        $warned = @($group.Group | Where-Object { $_.Status -eq 'Warn' }).Count
+        $passed = @($group.Group | Where-Object { $_.Status -eq 'Ok' }).Count
+
+        $color = if ($failed -gt 0) { 'Red' } elseif ($warned -gt 0) { 'Yellow' } else { 'Green' }
+        Write-Host (Get-ConsoleText "{0}: {1} ok, {2} warning(s), {3} failed" -FormatArgs @((Get-ConsoleText $group.Name), $passed, $warned, $failed)) -ForegroundColor $color
+
+        foreach ($row in @($group.Group | Where-Object { $_.Status -ne 'Ok' })) {
+            $label = if ($row.Status -eq 'Fail') { Get-ConsoleText "DefenderCheckFail" } else { Get-ConsoleText "DefenderCheckWarn" }
+            Write-Host ("    [{0}] {1}" -f $label, $row.Item) -ForegroundColor $color
+        }
+    }
+
+    $failCount = @($rows | Where-Object { $_.Status -eq 'Fail' }).Count
+    $warnCount = @($rows | Where-Object { $_.Status -eq 'Warn' }).Count
+
+    Write-Host ""
+    if ($failCount -eq 0 -and $warnCount -eq 0) {
+        Write-Host (Get-ConsoleText "All checks passed: no trace of Microsoft Defender is left.") -ForegroundColor Green
+    }
+    else {
+        Write-Host (Get-ConsoleText "{0} blocking item(s) and {1} leftover item(s) remain." -FormatArgs @($failCount, $warnCount)) -ForegroundColor Yellow
+    }
+
+    return ($failCount -eq 0)
+}
+
+
+<#
+    .SYNOPSIS
         Permanently removes Microsoft Defender Antivirus from the machine.
 
     .DESCRIPTION
         Unsupported by Microsoft. On Windows client there is no optional feature to uninstall, so this
-        deletes the service registrations (WinDefend, WdNisSvc, Sense, SecurityHealthService), the
-        filter and ELAM drivers (WdFilter, WdNisDrv, WdBoot), Defender's policy and configuration keys,
-        its scheduled tasks, and the program/data folders. The removal cannot be undone from this tool:
-        recovery requires an in-place upgrade or a clean install, and a Windows feature upgrade brings
-        Defender back.
+        deletes the service registrations (WinDefend, WdNisSvc, Sense, SecurityHealthService, the MsSec*
+        platform drivers), the filter and ELAM drivers (WdFilter, WdNisDrv, WdBoot), Defender's policy
+        and configuration keys, its shell, COM and WinRT registration, the WebThreatDefense host group,
+        its autostart entries and firewall rules, its scheduled tasks, and the program/data folders.
+        The removal cannot be undone from this tool: recovery requires an in-place upgrade or a clean
+        install, and a Windows feature upgrade brings Defender back.
 
         Registry keys are exported and, when available, a system restore point is created first.
 
@@ -586,25 +1075,20 @@ function Invoke-RemoveWindowsDefender {
     # HKLM\SOFTWARE\Microsoft\Security Center\Provider\Av is deliberately left alone: wscsvc keeps the
     # key open, so taking ownership only changes the owner and the delete still fails. It is a display
     # entry, not a component, so the registry keys above are where the removal stops.
-    $configKeys = @(
-        'HKLM:\SOFTWARE\Microsoft\Windows Defender',
-        'HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender',
-        'HKLM:\SOFTWARE\Microsoft\Windows Defender Security Center'
-    )
-    $driverFiles = @('WdFilter.sys', 'WdNisDrv.sys', 'WdBoot.sys') | ForEach-Object { Join-Path $env:SystemRoot "System32\drivers\$_" }
-    $folders = @(
-        (Join-Path $env:ProgramFiles 'Windows Defender'),
-        (Join-Path $env:ProgramFiles 'Windows Defender Advanced Threat Protection'),
-        (Join-Path $env:ProgramData 'Microsoft\Windows Defender'),
-        (Join-Path $env:ProgramData 'Microsoft\Windows Defender Advanced Threat Protection'),
-        (Join-Path $env:ProgramData 'Microsoft\Windows Defender Support'),
-        (Join-Path $env:ProgramData 'Microsoft\Windows Security Health')
-    )
+    $configKeys = @(Get-DefenderRegistryKeyTargets)
+    $clsidKeys = @(Get-DefenderClsidTargets)
+    # WinRT classes and Ubpm maintenance entries are discovered by name, so both lists are dynamic.
+    $runtimeKeys = @(Get-DefenderRuntimeClassKeys) + @(Get-DefenderUbpmTargets)
+    $valueTargets = @(Get-DefenderRegistryValueTargets)
+    $driverFiles = @(Get-DefenderDriverFiles)
+    $folders = @(Get-DefenderFolderTargets)
 
     if ($whatIf) {
         Write-Host (Get-ConsoleText "[WhatIf] Remove Microsoft Defender Antivirus") -ForegroundColor Cyan
         Write-Host (Get-ConsoleText "[WhatIf] Stop and delete services: {0}" -FormatArgs @(($services -join ', '))) -ForegroundColor Cyan
         Write-Host (Get-ConsoleText "[WhatIf] Delete registry keys: {0}" -FormatArgs @((($serviceKeys + $configKeys) -join ', '))) -ForegroundColor Cyan
+        Write-Host (Get-ConsoleText "[WhatIf] Delete COM registrations and WebThreatDefense leftovers: {0}" -FormatArgs @(($clsidKeys + $runtimeKeys).Count)) -ForegroundColor Cyan
+        Write-Host (Get-ConsoleText "[WhatIf] Delete autostart entries and firewall rules that belong to Defender") -ForegroundColor Cyan
         Write-Host (Get-ConsoleText "[WhatIf] Delete driver files: {0}" -FormatArgs @(($driverFiles -join ', '))) -ForegroundColor Cyan
         Write-Host (Get-ConsoleText "[WhatIf] Delete folders: {0}" -FormatArgs @(($folders -join ', '))) -ForegroundColor Cyan
         return $true
@@ -704,19 +1188,35 @@ function Invoke-RemoveWindowsDefender {
         }
     }
 
-    # ---- Phase 5: configuration and policy keys ----
+    # ---- Phase 5: configuration, shell, COM and WinRT registration ----
     Write-Host (Get-ConsoleText "> Deleting Defender registry keys...")
     $failedKeys = @()
-    foreach ($configKey in $configKeys) {
+    foreach ($configKey in @($configKeys) + @($clsidKeys) + @($runtimeKeys)) {
         if (-not (Remove-DefenderRegistryKey -Key $configKey)) {
             $failedKeys += $configKey
         }
     }
 
-    # SecurityHealth autostart entry (Windows Security tray icon)
-    $runKey = 'HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Run'
-    if (Test-Path -LiteralPath $runKey) {
-        Remove-ItemProperty -Path $runKey -Name 'SecurityHealth' -Force -ErrorAction SilentlyContinue
+    # ---- Phase 5b: autostart entries and the Svchost host group ----
+    # These live in keys that belong to Windows, so they are deleted value by value.
+    Write-Host (Get-ConsoleText "> Removing Defender autostart entries...")
+    $failedValues = @()
+    foreach ($target in $valueTargets) {
+        foreach ($valueName in $target.Names) {
+            if (-not (Remove-DefenderRegistryValue -Key $target.Key -Name $valueName)) {
+                $failedValues += "$($target.Key)\$valueName"
+            }
+        }
+    }
+
+    # ---- Phase 5c: firewall rules ----
+    Write-Host (Get-ConsoleText "> Removing Defender firewall rules...")
+    $firewallResult = Remove-DefenderFirewallRules
+    if ($firewallResult.Removed -gt 0) {
+        Write-Host (Get-ConsoleText "Removed {0} Defender firewall rule(s)." -FormatArgs @($firewallResult.Removed))
+    }
+    if ($firewallResult.Failed.Count -gt 0) {
+        Write-Warning (Get-ConsoleText "These firewall rules could not be removed: {0}" -FormatArgs @(($firewallResult.Failed -join ', ')))
     }
 
     # ---- Phase 6: program folders ----
@@ -745,6 +1245,9 @@ function Invoke-RemoveWindowsDefender {
     }
     if ($failedKeys.Count -gt 0) {
         Write-Warning (Get-ConsoleText "These registry keys could not be deleted: {0}" -FormatArgs @(($failedKeys -join ', ')))
+    }
+    if ($failedValues.Count -gt 0) {
+        Write-Warning (Get-ConsoleText "These registry values could not be deleted: {0}" -FormatArgs @(($failedValues -join ', ')))
     }
     if ($failedFolders.Count -gt 0) {
         Write-Warning (Get-ConsoleText "These folders could not be deleted: {0}" -FormatArgs @(($failedFolders -join ', ')))

@@ -1472,7 +1472,7 @@
     {
       "FeatureId": "RemoveWindowsDefender",
       "Label": "Permanently remove Microsoft Defender Antivirus. IRREVERSIBLE, NOT RECOMMENDED!",
-      "ToolTip": "Deletes Defender's services, filter and early-launch drivers, policies, scheduled tasks and program folders. Unlike disabling it, this cannot be undone from Win11Debloat: recovery needs an in-place upgrade or a clean install, and a Windows feature upgrade will reinstall Defender. Only use this when a third-party antivirus is already active, or when the machine is intentionally left without an on-access scanner.",
+      "ToolTip": "Deletes Defender's service registrations (including the MsSec* platform drivers), filter and early-launch drivers, policy and configuration keys, shell/COM/WinRT registration, the WebThreatDefense host group, autostart entries, firewall rules, scheduled tasks and program folders. Unlike disabling it, this cannot be undone from Win11Debloat: recovery needs an in-place upgrade or a clean install, and a Windows feature upgrade will reinstall Defender. Only use this when a third-party antivirus is already active, or when the machine is intentionally left without an on-access scanner.",
       "Category": null,
       "RegistryKey": null,
       "ApplyText": "Removing Microsoft Defender Antivirus",

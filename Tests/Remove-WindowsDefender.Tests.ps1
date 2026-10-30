@@ -104,6 +104,11 @@ Describe 'Invoke-RemoveWindowsDefender' {
 }
 
 Describe 'Get-DefenderResidue' {
+    BeforeEach {
+        # The runtime-class and Ubpm lookups enumerate the live registry; keep the tests hermetic.
+        Mock Get-ChildItem { @() }
+    }
+
     It 'reports a leftover service key even when the service is no longer running' {
         Mock Get-DefenderServiceNames { @('WinDefend', 'WdFilter') }
         Mock Test-Path { $true } -ParameterFilter { $LiteralPath -like '*Services\WdFilter' }
@@ -126,6 +131,10 @@ Describe 'Get-DefenderResidue' {
 }
 
 Describe 'Get-DefenderRemovalPreflight' {
+    BeforeEach {
+        Mock Get-ChildItem { @() }
+    }
+
     It 'recognises a half-finished removal instead of refusing to clean it up' {
         Mock Test-DefenderRemovalIsAdmin { $true }
         Mock Get-Service { $null } -ParameterFilter { $Name -eq 'WinDefend' }
@@ -169,6 +178,119 @@ Describe 'Enable-TokenPrivilege' {
     It 'rejects an unknown privilege name without throwing' {
         Enable-TokenPrivilege 'SeNoSuchPrivilegeExists' | Should -BeFalse
         ('Win11DebloatTokenPrivilege' -as [type]) | Should -Not -BeNullOrEmpty
+    }
+}
+
+Describe 'Get-DefenderServiceNames' {
+    It 'includes the MsSec platform drivers that the ImagePath scan cannot recognise' {
+        Mock Get-ChildItem { @() }
+
+        $names = @(Get-DefenderServiceNames)
+
+        $names | Should -Contain 'MsSecCore'
+        $names | Should -Contain 'MsSecFlt'
+        $names | Should -Contain 'MsSecWfp'
+    }
+}
+
+Describe 'Get-DefenderRegistryKeyTargets' {
+    It 'covers shell, event tracing, Windows Security and web threat defence registration' {
+        $keys = @(Get-DefenderRegistryKeyTargets)
+
+        $keys | Should -Contain 'HKLM:\SOFTWARE\Microsoft\Windows Security Health'
+        $keys | Should -Contain 'HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\DefenderAuditLogger'
+        $keys | Should -Contain 'HKLM:\SYSTEM\CurrentControlSet\Control\WMI\Autologger\DefenderApiLogger'
+        $keys | Should -Contain 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Svchost\WebThreatDefense'
+        $keys | Should -Contain 'HKLM:\SOFTWARE\Microsoft\WindowsRuntime\Server\WebThreatDefSvc'
+        $keys | Should -Contain 'HKLM:\SOFTWARE\Classes\AppUserModelId\Windows.Defender'
+        $keys | Should -Contain 'HKLM:\SOFTWARE\Classes\WindowsDefender'
+    }
+}
+
+Describe 'Get-DefenderClsidTargets' {
+    It 'returns both the 64-bit and the WOW6432Node registration of every class' {
+        $targets = @(Get-DefenderClsidTargets)
+
+        $targets | Should -HaveCount 26
+        $targets | Should -Contain 'HKLM:\SOFTWARE\Classes\CLSID\{2781761E-28E0-4109-99FE-B9D127C57AFE}'
+        $targets | Should -Contain 'HKLM:\SOFTWARE\Classes\WOW6432Node\CLSID\{2781761E-28E0-4109-99FE-B9D127C57AFE}'
+    }
+}
+
+Describe 'Get-DefenderFirewallRuleNames' {
+    It 'recognises rule names and rule blobs that name Defender' {
+        Mock Test-Path { $true }
+        Mock Get-ItemProperty {
+            [pscustomobject]@{
+                PSPath                     = 'Microsoft.PowerShell.Core\Registry::test'
+                PSParentPath               = 'Microsoft.PowerShell.Core\Registry::test-parent'
+                PSChildName                = 'System'
+                PSDrive                    = 'HKLM'
+                PSProvider                 = 'Microsoft.PowerShell.Core\Registry'
+                'WindowsDefender-1'        = 1
+                'WebThreatDefSvc_Allow_In' = 1
+                '{2A5FE97D-01A4-4A9C-8241-BB3755B65EE0}' = [System.Text.Encoding]::Unicode.GetBytes('C:\Program Files\Windows Defender\MsMpEng.exe')
+                'UnrelatedRule'            = [System.Text.Encoding]::Unicode.GetBytes('C:\Windows\explorer.exe')
+            }
+        }
+
+        $names = @(Get-DefenderFirewallRuleNames -Key 'HKLM:\SYSTEM\CurrentControlSet\Services\SharedAccess\Parameters\FirewallPolicy\RestrictedServices\Static\System')
+
+        $names | Should -Contain 'WindowsDefender-1'
+        $names | Should -Contain 'WebThreatDefSvc_Allow_In'
+        $names | Should -Contain '{2A5FE97D-01A4-4A9C-8241-BB3755B65EE0}'
+        $names | Should -Not -Contain 'UnrelatedRule'
+    }
+}
+
+Describe 'Remove-DefenderRegistryValue' {
+    It 'treats a missing key as already removed' {
+        Mock Test-Path { $false }
+
+        Remove-DefenderRegistryValue -Key 'HKLM:\SOFTWARE\NoSuchKey' -Name 'WindowsDefender' | Should -BeTrue
+    }
+}
+
+Describe 'Get-DefenderRemovalReport' {
+    It 'fails a leftover service key and only warns about a leftover driver file' {
+        Mock Get-DefenderServiceNames { @('WinDefend') }
+        Mock Get-DefenderRegistryKeyTargets { @() }
+        Mock Get-DefenderRuntimeClassKeys { @() }
+        Mock Get-DefenderUbpmTargets { @() }
+        Mock Get-DefenderRegistryValueTargets { @() }
+        Mock Get-DefenderClsidTargets { @() }
+        Mock Get-DefenderDriverFiles { @('C:\Windows\System32\drivers\WdFilter.sys') }
+        Mock Get-DefenderFolderTargets { @() }
+        Mock Get-DefenderScheduledTaskNames { @() }
+        Mock Get-DefenderFirewallRuleNames { @() }
+        Mock Test-Path { $true } -ParameterFilter { $LiteralPath -like '*Services\WinDefend' }
+        Mock Test-Path { $true } -ParameterFilter { $LiteralPath -like '*WdFilter.sys' }
+        Mock Test-Path { $false }
+        Mock Get-Process { $null }
+
+        $rows = @(Get-DefenderRemovalReport)
+
+        ($rows | Where-Object { $_.Item -eq 'WinDefend' }).Status | Should -Be 'Fail'
+        ($rows | Where-Object { $_.Item -eq 'WdFilter.sys' }).Status | Should -Be 'Warn'
+    }
+
+    It 'reports nothing but OK rows on a cleaned machine' {
+        Mock Get-DefenderServiceNames { @('WinDefend', 'WdFilter') }
+        Mock Get-DefenderRegistryKeyTargets { @('HKLM:\SOFTWARE\Microsoft\Windows Defender') }
+        Mock Get-DefenderRuntimeClassKeys { @() }
+        Mock Get-DefenderUbpmTargets { @() }
+        Mock Get-DefenderRegistryValueTargets { @() }
+        Mock Get-DefenderClsidTargets { @() }
+        Mock Get-DefenderDriverFiles { @('C:\Windows\System32\drivers\WdFilter.sys') }
+        Mock Get-DefenderFolderTargets { @() }
+        Mock Get-DefenderScheduledTaskNames { @() }
+        Mock Get-DefenderFirewallRuleNames { @() }
+        Mock Test-Path { $false }
+        Mock Get-Process { $null }
+
+        $rows = @(Get-DefenderRemovalReport)
+
+        @($rows | Where-Object { $_.Status -ne 'Ok' }) | Should -HaveCount 0
     }
 }
 

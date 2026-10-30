@@ -13,8 +13,12 @@ function Save-Settings {
         "Settings" = @()
     }
     
+    # Irreversible actions are never replayed from a saved preset: the user selects them again and
+    # confirms explicitly, so "run saved settings" cannot silently retry a destructive removal.
+    $excludedSettings = @('RemoveWindowsDefender')
+
     foreach ($param in $script:Params.Keys) {
-        if ($script:ControlParams -notcontains $param -and $script:Features.ContainsKey($param)) {
+        if ($script:ControlParams -notcontains $param -and $excludedSettings -notcontains $param -and $script:Features.ContainsKey($param)) {
             $value = $script:Params[$param]
 
             $settings.Settings += @{
