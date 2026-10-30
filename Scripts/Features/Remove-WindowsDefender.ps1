@@ -1,4 +1,4 @@
-<#
+﻿<#
     .SYNOPSIS
         Tests whether the current process is elevated.
 
@@ -422,11 +422,14 @@ function Invoke-SystemTaskCommand {
             Start-Sleep -Milliseconds 500
             if (& $Completed) { break }
 
-            # An access-denied will never turn into a success by waiting, and the tools print it into
-            # the task log. Bailing out here is the difference between two seconds and a wasted minute.
+            # A state that has not changed after the task ran will not change by waiting either: the
+            # tools print their failure into the task log and keep quiet on success. Any output while
+            # the condition still fails means the delete was refused, so stop burning the timeout.
+            # Matching the text itself is not an option - the tool output is localized, and non-ASCII
+            # source breaks parsing on Windows installations that do not use a UTF-8 code page.
             if ($attempt -ge 2 -and (Test-Path -LiteralPath $logPath)) {
                 $taskOutput = Get-Content -LiteralPath $logPath -Raw -ErrorAction SilentlyContinue
-                if ($taskOutput -and $taskOutput -match '(?i)denied|拒绝访问|无法删除|cannot delete') {
+                if (-not [string]::IsNullOrWhiteSpace($taskOutput)) {
                     break
                 }
             }
