@@ -287,6 +287,7 @@ Describe 'Get-DefenderRemovalReport' {
         Mock Get-DefenderFirewallRuleNames { @() }
         Mock Test-Path { $false }
         Mock Get-Process { $null }
+        Mock Get-Service { $null }
 
         $rows = @(Get-DefenderRemovalReport)
 
