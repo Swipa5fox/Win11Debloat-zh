@@ -560,6 +560,12 @@ function Invoke-RemoveWindowsDefender {
         foreach ($blocker in $preflight.Blockers) {
             Write-Warning (Get-ConsoleText "Cannot remove Microsoft Defender Antivirus: {0}" -FormatArgs @($blocker))
         }
+
+        # The switch is dropped so the closing summary does not warn about a reboot for work that never
+        # ran. Get-RebootFeatureLabels only looks at which parameters are set, not at what succeeded.
+        if ($script:Params.ContainsKey('RemoveWindowsDefender')) {
+            $script:Params.Remove('RemoveWindowsDefender')
+        }
         return $false
     }
 
@@ -573,6 +579,10 @@ function Invoke-RemoveWindowsDefender {
     # keeps Windows from booting with a start driver whose file is missing.
     $services = @(Get-DefenderServiceNames)
     $serviceKeys = @($services | ForEach-Object { "HKLM:\SYSTEM\CurrentControlSet\Services\$_" })
+    # Windows Security's own antivirus registration under
+    # HKLM\SOFTWARE\Microsoft\Security Center\Provider\Av is deliberately left alone: wscsvc keeps the
+    # key open, so taking ownership only changes the owner and the delete still fails. It is a display
+    # entry, not a component, so the registry keys above are where the removal stops.
     $configKeys = @(
         'HKLM:\SOFTWARE\Microsoft\Windows Defender',
         'HKLM:\SOFTWARE\Policies\Microsoft\Windows Defender',
