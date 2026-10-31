@@ -191,7 +191,7 @@ if (-not $isAdmin -and -not $VerifyDefenderRemoval) {
 }
 
 # Define script-level variables & paths
-$script:Version = "2026.10.30"
+$script:Version = "2026.10.31"
 $configPath = Join-Path $PSScriptRoot 'Config'
 # Deployment environments such as SCCM task sequences may not define LOCALAPPDATA.
 if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
