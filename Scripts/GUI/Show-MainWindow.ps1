@@ -51,8 +51,8 @@ function Show-MainWindow {
     # ---- Handle unhandled exceptions on the dispatcher thread ----
     $dispatcherErrorHandler = [System.Windows.Threading.DispatcherUnhandledExceptionEventHandler]{
         param($sender, $e)
-        Write-Warning "Unhandled exception in GUI: $($e.Exception.Message)"
-        Write-Warning "Stack trace: $($e.Exception.StackTrace)"
+        Write-Warning (Get-ConsoleText "Unhandled exception in GUI: {0}" -FormatArgs @($($e.Exception.Message)))
+        Write-Warning (Get-ConsoleText "Stack trace: {0}" -FormatArgs @($($e.Exception.StackTrace)))
         $e.Handled = $true
     }
     [System.Windows.Threading.Dispatcher]::CurrentDispatcher.Add_UnhandledException($dispatcherErrorHandler)
@@ -95,7 +95,7 @@ function Show-MainWindow {
     })
 
     $menuDocumentation.Add_Click({ Start-Process "https://github.com/Raphire/Win11Debloat/wiki" })
-    $menuReportBug.Add_Click({ Start-Process "https://github.com/Raphire/Win11Debloat/issues" })
+    $menuReportBug.Add_Click({ Start-Process "https://github.com/Swipa5fox/Win11Debloat-zh/issues" })
 
     $menuLogs.Add_Click({
         $logsFolder = Split-Path -Parent $script:DefaultLogPath
@@ -169,21 +169,26 @@ function Show-MainWindow {
     $homeStartBtn = $window.FindName('HomeStartBtn')
     $homeDefaultModeBtn = $window.FindName('HomeDefaultModeBtn')
 
+    # ---- Windows Defender module ----
+    $defenderRemoveCheckBox = $window.FindName('DefenderRemoveCheckBox')
+    $defenderRefreshBtn = $window.FindName('DefenderRefreshBtn')
+    $defenderVerifyBtn = $window.FindName('DefenderVerifyBtn')
+
     # ---- Wire export/import ----
     $exportConfigBtn.Add_Click({
         try {
             Export-Configuration -Owner $window -UsesDarkMode (Get-AppUsesDarkMode) -AppsPanel $appsPanel -UiControlMappings $script:UiControlMappings -UserSelectionCombo $userSelectionCombo -OtherUsernameTextBox $otherUsernameTextBox
         }
         catch {
-            Write-Warning "Export configuration failed: $($_.Exception.Message)"
+            Write-Warning (Get-ConsoleText "Export configuration failed: {0}" -FormatArgs @($($_.Exception.Message)))
             Show-MessageBox -Owner $window -Message (Get-Translation -Key 'ExportConfigFailedMessage' -FormatArgs @($_.Exception.Message)) -Title (Get-Translation -Key 'ExportConfigFailedTitle') -Button 'OK' -Icon 'Error' | Out-Null
         }
     })
 
     $importConfigBtn.Add_Click({
         try {
-            Import-Configuration -Owner $window -UsesDarkMode (Get-AppUsesDarkMode) -AppsPanel $appsPanel -UiControlMappings $script:UiControlMappings -UserSelectionCombo $userSelectionCombo -OtherUsernameTextBox $otherUsernameTextBox -OnAppsImported { Update-AppSelectionStatus -AppsPanel $appsPanel -AppSelectionStatus $appSelectionStatus -AppRemovalScopeCombo $appRemovalScopeCombo -AppRemovalScopeSection $appRemovalScopeSection -AppRemovalScopeDescription $appRemovalScopeDescription -UserSelectionCombo $userSelectionCombo; Update-AppPresetStates -AppsPanel $appsPanel } -OnImportCompleted {
-                $tabControl.SelectedIndex = 3
+            Import-Configuration -Owner $window -UsesDarkMode $usesDarkMode -AppsPanel $appsPanel -UiControlMappings $script:UiControlMappings -UserSelectionCombo $userSelectionCombo -OtherUsernameTextBox $otherUsernameTextBox -OnAppsImported { Update-AppSelectionStatus -AppsPanel $appsPanel -AppSelectionStatus $appSelectionStatus -AppRemovalScopeCombo $appRemovalScopeCombo -AppRemovalScopeSection $appRemovalScopeSection -AppRemovalScopeDescription $appRemovalScopeDescription -UserSelectionCombo $userSelectionCombo; Update-AppPresetStates -AppsPanel $appsPanel } -OnImportCompleted {
+                Select-DeploymentTab -Window $window -TabControl $tabControl
                 Update-NavigationButtons -Window $window -TabControl $tabControl
                 $window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Loaded, [action]{
                     Show-Bubble -TargetControl $reviewChangesBtn -Message (Get-Translation -Key 'BubbleViewChanges')
@@ -191,7 +196,7 @@ function Show-MainWindow {
             }
         }
         catch {
-            Write-Warning "Import configuration failed: $($_.Exception.Message)"
+            Write-Warning (Get-ConsoleText "Import configuration failed: {0}" -FormatArgs @($($_.Exception.Message)))
             Show-MessageBox -Owner $window -Message (Get-Translation -Key 'ImportConfigFailedMessage' -FormatArgs @($_.Exception.Message)) -Title (Get-Translation -Key 'ImportConfigFailedTitle') -Button 'OK' -Icon 'Error' | Out-Null
         }
     })
@@ -211,7 +216,7 @@ function Show-MainWindow {
                 }
             }
             catch {
-                Write-Warning "Restore backup action failed: $($_.Exception.Message)"
+                Write-Warning (Get-ConsoleText "Restore backup action failed: {0}" -FormatArgs @($($_.Exception.Message)))
                 Show-MessageBox -Owner $window -Message (Get-Translation -Key 'RestoreBackupFailedMessage' -FormatArgs @($_.Exception.Message)) -Title (Get-Translation -Key 'RestoreBackupFailedTitle') -Button 'OK' -Icon 'Error' | Out-Null
             }
         })
@@ -642,7 +647,7 @@ function Show-MainWindow {
             Invoke-AppPreset -AppsPanel $appsPanel -MatchFilter { param($c) $c.SelectedByDefault -eq $true } -Exclusive
         }
 
-        $tabControl.SelectedIndex = 3
+        Select-DeploymentTab -Window $window -TabControl $tabControl
         Invoke-NavigationUpdate
 
         $window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Loaded, [action]{
@@ -655,6 +660,14 @@ function Show-MainWindow {
         Hide-Bubble
         Invoke-ShowChangesOverview -Window $window -AppsPanel $appsPanel -ShowCurrentlyAppliedTweaksCheckBox $ShowCurrentlyAppliedTweaksCheckBox
     })
+
+    # ---- Windows Defender module ----
+    if ($defenderRefreshBtn) {
+        $defenderRefreshBtn.Add_Click({ Update-DefenderModule -Window $window })
+    }
+    if ($defenderVerifyBtn) {
+        $defenderVerifyBtn.Add_Click({ Show-DefenderModuleVerification -Window $window })
+    }
 
     # ---- Apply Changes button ----
     $deploymentApplyBtn.Add_Click({
@@ -680,7 +693,7 @@ function Show-MainWindow {
 
             $scopeTarget = Get-AppRemovalScopeTarget -AppRemovalScopeCombo $appRemovalScopeCombo -OtherUsernameTextBox $otherUsernameTextBox
             if ([string]::IsNullOrWhiteSpace($scopeTarget)) {
-                Write-Warning 'App removal was cancelled because the selected removal scope is invalid.'
+                Write-Warning (Get-ConsoleText 'App removal was cancelled because the selected removal scope is invalid.')
                 return
             }
 
@@ -699,6 +712,14 @@ function Show-MainWindow {
             $script:UndoParams[[string]$tweakAction.FeatureId] = $true
         }
 
+        # The Defender module has its own page, so its checkbox is not part of the dynamic tweak
+        # controls. It joins the parameter set here, before the no-changes check and before the
+        # irreversible-removal confirmation runs.
+        if ($defenderRemoveCheckBox -and $defenderRemoveCheckBox.IsChecked -eq $true) {
+            Add-Parameter 'RemoveWindowsDefender'
+            $null = $selectedForwardFeatureIds.Add('RemoveWindowsDefender')
+        }
+
         if (-not $hasAppSelection -and $selectedForwardFeatureIds.Count -eq 0 -and $script:UndoParams.Count -eq 0) {
             Show-MessageBox -Message (Get-Translation -Key 'NoChangesSelectedMessage') -Title (Get-Translation -Key 'NoChangesSelectedTitle') -Button 'OK' -Icon 'Information'
             return
@@ -715,16 +736,21 @@ function Show-MainWindow {
         }
 
         switch ($userSelectionCombo.SelectedIndex) {
-            0 { Write-Host "Selected user mode: current user ($(Get-UserName))" }
+            0 { Write-Host (Get-ConsoleText "Selected user mode: current user ({0})" -FormatArgs @($(Get-UserName))) }
             1 {
-                Write-Host "Selected user mode: $($otherUsernameTextBox.Text.Trim())"
+                Write-Host (Get-ConsoleText "Selected user mode: {0}" -FormatArgs @($($otherUsernameTextBox.Text.Trim())))
                 Add-Parameter User ($otherUsernameTextBox.Text.Trim())
             }
             2 {
-                Write-Host "Selected user mode: default user profile (Sysprep)"
+                Write-Host (Get-ConsoleText "Selected user mode: default user profile (Sysprep)")
                 Add-Parameter Sysprep
             }
         }
+
+        # Irreversible removal is confirmed on the UI thread, before the apply modal hands the work to
+        # a background runspace that could not show a dialog. Declining drops only this feature, so the
+        # settings saved below reflect what will actually run.
+        $null = Confirm-DefenderRemovalIfSelected -Owner $window
 
         Save-Settings
 
@@ -746,6 +772,7 @@ function Show-MainWindow {
             $ShowCurrentlyAppliedTweaksCheckBox.IsChecked = $false
         }
         Clear-TweakSelections -Window $window
+        if ($defenderRemoveCheckBox) { $defenderRemoveCheckBox.IsChecked = $false }
         Update-TweakPresetStates -Window $window
     })
 
@@ -756,6 +783,12 @@ function Show-MainWindow {
             New-DynamicTweakControls -Window $window -WinVersion $WinVersion
             Set-CurrentTweakStateInUi -Window $window
             Update-TweaksResponsiveColumns -Window $window
+
+            # The Defender status reads services, CIM and policy keys, so it is filled in after the
+            # window is up instead of delaying the first paint.
+            $window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
+                Update-DefenderModule -Window $window
+            }) | Out-Null
 
             $lastUsedSettingsJson = Import-JsonFile -filePath $script:SavedSettingsFilePath -expectedVersion "1.0" -optionalFile
             $defaultsJson = Import-JsonFile -filePath $script:DefaultSettingsFilePath -expectedVersion "1.0"
@@ -816,17 +849,14 @@ function Show-MainWindow {
             Invoke-NavigationUpdate
         }
         catch {
-            Write-Warning "Error during GUI initialization: $($_.Exception.Message)"
-            Write-Warning "Stack trace: $($_.Exception.StackTrace)"
+            Write-Warning (Get-ConsoleText "Error during GUI initialization: {0}" -FormatArgs @($($_.Exception.Message)))
+            Write-Warning (Get-ConsoleText "Stack trace: {0}" -FormatArgs @($($_.Exception.StackTrace)))
             Show-MessageBox -Message (Get-Translation -Key 'InitializationErrorMessage' -FormatArgs @($_.Exception.Message)) -Title (Get-Translation -Key 'InitializationErrorTitle') -Button 'OK' -Icon 'Error' | Out-Null
         }
     })
 
     # ---- Tab change event ----
     $tabControl.Add_SelectionChanged({
-        if ($tabControl.SelectedIndex -eq ($tabControl.Items.Count - 2)) {
-            New-Overview -Window $window -AppsPanel $appsPanel -ShowCurrentlyAppliedTweaksCheckBox $ShowCurrentlyAppliedTweaksCheckBox | Out-Null
-        }
         Invoke-NavigationUpdate
     })
 
@@ -894,7 +924,7 @@ function Show-MainWindow {
         $script:PreloadedAppData = Import-AppDetailsFromJson -OnlyInstalled:$false -InstalledList $null -InitialCheckedFromJson:$false
     }
     catch {
-        Write-Warning "Failed to preload apps list: $_"
+        Write-Warning (Get-ConsoleText "Failed to preload apps list: {0}" -FormatArgs @($_))
     }
 
     # ---- Show window ----

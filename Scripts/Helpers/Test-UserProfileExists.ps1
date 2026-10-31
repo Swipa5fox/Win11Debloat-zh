@@ -35,7 +35,7 @@ function Test-UserProfileExists {
 
     }
     catch {
-        Write-Error "Something went wrong when trying to find the user directory path for user $lookupName. Please ensure the user exists on this system"
+        Write-Error (Get-ConsoleText "Something went wrong when trying to find the user directory path for user {0}. Please ensure the user exists on this system" -FormatArgs @($lookupName))
     }
 
     return $false

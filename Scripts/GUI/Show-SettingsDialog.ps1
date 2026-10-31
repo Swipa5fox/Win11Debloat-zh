@@ -65,7 +65,7 @@ function Show-SettingsDialog {
             $errorText = $dialog.FindName('SettingsErrorText')
             $errorText.Text = Get-Translation -Key 'SettingsSaveError'
             $errorText.Visibility = 'Visible'
-            Write-Warning "Unable to update UI preferences: $($_.Exception.Message)"
+            Write-Warning (Get-ConsoleText "Unable to update UI preferences: {0}" -FormatArgs @($($_.Exception.Message)))
         }
     }
     foreach ($mode in @('Auto', 'Light', 'Dark')) {

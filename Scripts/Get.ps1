@@ -1,4 +1,4 @@
-param (
+﻿param (
     [switch]$Verbose,
     [switch]$WhatIf,
     [switch]$Dev,
@@ -104,20 +104,61 @@ param (
     [switch]$ShowDriveLettersFirst,
     [switch]$ShowDriveLettersLast,
     [switch]$ShowNetworkDriveLettersFirst,
-    [switch]$HideDriveLetters
+    [switch]$HideDriveLetters,
+    [switch]$RemoveWindowsDefender,
+    [switch]$AcceptDefenderRemovalRisk,
+    [switch]$VerifyDefenderRemoval
 )
+
+# This launcher is distributed on its own and downloads the project, so it can run with no
+# Config/Languages folder anywhere near it. It lives inside the project tree too, though, so the
+# localizer is read from there when available and every message falls back to its English source
+# text otherwise - which is why the definition is inlined instead of dot-sourced.
+$consoleLanguagesPath = Join-Path (Join-Path (Split-Path -Path $PSScriptRoot -Parent) 'Config') 'Languages'
+$consoleLanguageCode = if ($Language) { $Language } else { [System.Globalization.CultureInfo]::CurrentUICulture.Name }
+
+function Get-ConsoleText {
+    param(
+        [Parameter(Mandatory, Position = 0)][string]$Text,
+        [object[]]$FormatArgs = $null
+    )
+
+    if (-not $script:ConsoleTextMap) {
+        $script:ConsoleTextMap = @{}
+        foreach ($code in @($consoleLanguageCode, 'en-US') | Select-Object -Unique) {
+            $path = Join-Path (Join-Path $consoleLanguagesPath $code) 'Console.json'
+            if (-not (Test-Path -LiteralPath $path)) { continue }
+            $json = Get-Content -LiteralPath $path -Raw -Encoding UTF8 | ConvertFrom-Json
+            foreach ($prop in $json.PSObject.Properties) { $script:ConsoleTextMap[$prop.Name] = [string]$prop.Value }
+            break
+        }
+    }
+
+    $resolved = if ($script:ConsoleTextMap.ContainsKey($Text)) { $script:ConsoleTextMap[$Text] } else { $Text }
+
+    if ($null -ne $FormatArgs -and $FormatArgs.Count -gt 0) {
+        try { return $resolved -f $FormatArgs } catch { return $resolved }
+    }
+
+    return $resolved
+}
+
+# This is the localized fork, so the release it downloads is our own - that is where the language
+# packs live. -Dev keeps upstream's original meaning of "the upstream development branch" for anyone
+# who wants the English original.
+$forkRepository = 'Swipa5fox/Win11Debloat-zh'
 
 # Check if current PowerShell environment is limited by security policies
 if ($ExecutionContext.SessionState.LanguageMode -ne "FullLanguage") {
-    Write-Error "Win11Debloat is unable to run on your system, PowerShell execution is restricted by security policies"
-    Write-Output "Press any key to exit..."
+    Write-Error (Get-ConsoleText "Win11Debloat is unable to run on your system, PowerShell execution is restricted by security policies")
+    Write-Output (Get-ConsoleText "Press any key to exit...")
     $null = [System.Console]::ReadKey()
     Exit 1
 }
 
 Clear-Host
 Write-Output "-------------------------------------------------------------------------------------------"
-Write-Output " Win11Debloat Script"
+Write-Output (Get-ConsoleText " Win11Debloat Script")
 Write-Output "-------------------------------------------------------------------------------------------"
 
 $tempRootPath = $env:TEMP
@@ -149,11 +190,14 @@ $expectedArchiveHash = $null
 # Download Win11Debloat from GitHub as a zip archive.
 try {
     if ($Dev) {
-        Write-Output "> Downloading development version of Win11Debloat..."
+        Write-Output (Get-ConsoleText "> Downloading development version of Win11Debloat...")
         $sourceUri = "https://github.com/Raphire/Win11Debloat/archive/refs/heads/master.zip"
-    } else {
-        Write-Output "> Downloading Win11Debloat..."
-        $release = Invoke-RestMethod https://api.github.com/repos/Raphire/Win11Debloat/releases/latest
+    }
+    else {
+        Write-Output (Get-ConsoleText "> Downloading Win11Debloat...")
+        # This fork publishes its own releases; they carry the same Win11Debloat.zip plus SHA256SUMS
+        # pair upstream ships, so the checksum below is verified against our build, not upstream's.
+        $release = Invoke-RestMethod "https://api.github.com/repos/$forkRepository/releases/latest"
         $sourceUri = $release.zipball_url
 
         $archiveAsset = @($release.assets | Where-Object { $_.name -ceq $releaseArchiveName }) | Select-Object -First 1
@@ -169,16 +213,16 @@ try {
             $sourceUri = $archiveAsset.browser_download_url
         }
         else {
-            Write-Warning 'This release does not publish both Win11Debloat.zip and SHA256SUMS. Downloading the source archive without SHA-256 verification.'
+            Write-Warning (Get-ConsoleText 'This release does not publish both Win11Debloat.zip and SHA256SUMS. Downloading the source archive without SHA-256 verification.')
         }
     }
     Invoke-RestMethod $sourceUri -OutFile $tempArchivePath
 }
 catch {
-    Write-Host "Unable to fetch required files from GitHub. Please check your internet connection and try again." -ForegroundColor Red
+    Write-Host (Get-ConsoleText "Unable to fetch required files from GitHub. Please check your internet connection and try again.") -ForegroundColor Red
     Write-Error -ErrorRecord $_
     Write-Output ""
-    Write-Output "Press enter to exit..."
+    Write-Output (Get-ConsoleText "Press enter to exit...")
     Read-Host | Out-Null
     Exit 1
 }
@@ -186,9 +230,9 @@ catch {
 # Do not use an archive that differs from the checksum published with the release
 if ($expectedArchiveHash -and -not (Test-FileHashMatch $tempArchivePath $expectedArchiveHash)) {
     Remove-Item $tempArchivePath -Force
-    Write-Host "The downloaded Win11Debloat archive does not match the SHA-256 checksum published with the release." -ForegroundColor Red
+    Write-Host (Get-ConsoleText "The downloaded Win11Debloat archive does not match the SHA-256 checksum published with the release.") -ForegroundColor Red
     Write-Output ""
-    Write-Output "Press enter to exit..."
+    Write-Output (Get-ConsoleText "Press enter to exit...")
     Read-Host | Out-Null
     Exit 1
 }
@@ -196,7 +240,7 @@ if ($expectedArchiveHash -and -not (Test-FileHashMatch $tempArchivePath $expecte
 # Remove old script folder if it exists, but keep configs, logs and backups
 if (Test-Path $tempWorkPath) {
     Write-Output ""
-    Write-Output "> Cleaning up old script files..."
+    Write-Output (Get-ConsoleText "> Cleaning up old script files...")
 
     Get-ChildItem -Path $tempWorkPath -Exclude Config,Logs,Backups | Remove-Item -Recurse -Force
 }
@@ -207,7 +251,7 @@ $backupDir = Join-Path $tempWorkPath 'ConfigOld'
 # Temporarily move existing config files if they exist to prevent them from being overwritten by the new script files, will be moved back after the new script is unpacked
 if (Test-Path "$configDir") {
     Write-Output ""
-    Write-Output "> Backing up existing config files..."
+    Write-Output (Get-ConsoleText "> Backing up existing config files...")
 
     New-Item -ItemType Directory -Path "$backupDir" -Force | Out-Null
 
@@ -221,7 +265,7 @@ if (Test-Path "$configDir") {
 }
 
 Write-Output ""
-Write-Output "> Unpacking..."
+Write-Output (Get-ConsoleText "> Unpacking...")
 
 # Unzip archive to Win11Debloat folder
 Expand-Archive $tempArchivePath $tempWorkPath
@@ -239,7 +283,7 @@ if (Test-Path "$backupDir") {
     }
 
     Write-Output ""
-    Write-Output "> Restoring existing config files..."
+    Write-Output (Get-ConsoleText "> Restoring existing config files...")
 
     Get-ChildItem -Path "$backupDir" -Recurse | Move-Item -Destination "$configDir"
     Remove-Item "$backupDir" -Recurse -Force
@@ -273,7 +317,7 @@ function Get-LauncherArgumentList([System.Collections.IDictionary]$BoundParamete
 $arguments = @(Get-LauncherArgumentList $PSBoundParameters)
 
 Write-Output ""
-Write-Output "> Launching Win11Debloat..."
+Write-Output (Get-ConsoleText "> Launching Win11Debloat...")
 
 # Minimize the PowerShell window when no parameters are provided
 if ($arguments.Count -eq 0) {
@@ -298,7 +342,7 @@ try {
 }
 catch {
     $exitCode = 1
-    Write-Error "Failed to start Win11Debloat: $_"
+    Write-Error (Get-ConsoleText "Failed to start Win11Debloat: {0}" -FormatArgs @($_))
 }
 
 # Wait for the process to finish before continuing
@@ -310,7 +354,7 @@ if ($null -ne $debloatProcess) {
 # Remove all remaining script files, except for configs, logs and backups
 if (Test-Path $tempWorkPath) {
     Write-Output ""
-    Write-Output "> Cleaning up..."
+    Write-Output (Get-ConsoleText "> Cleaning up...")
 
     # Cleanup, remove Win11Debloat directory
     Get-ChildItem -Path $tempWorkPath -Exclude Config,Logs,Backups | Remove-Item -Recurse -Force

@@ -145,7 +145,7 @@ function Invoke-WithTargetUserHive {
             reg unload "HKU\$($hiveContext.MountName)" | Out-Null
             $unloadExitCode = $LASTEXITCODE
             if ($unloadExitCode -ne 0) {
-                Write-Warning "Failed to unload registry hive 'HKU\$($hiveContext.MountName)' (exit code: $unloadExitCode)"
+                Write-Warning (Get-ConsoleText "Failed to unload registry hive 'HKU\{0}' (exit code: {1})" -FormatArgs @($($hiveContext.MountName), $unloadExitCode))
             }
         }
     }

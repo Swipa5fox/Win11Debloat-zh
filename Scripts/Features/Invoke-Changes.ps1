@@ -48,15 +48,15 @@ function Invoke-FeatureApply {
     # ---- Custom features (no registry backing, or special handling required) ----
     switch ($FeatureId) {
         'RemoveApps' {
-            Write-Host "> $applyText for $(Get-FriendlyTargetUserName)..."
+            Write-Host (Get-ConsoleText "> {0} for {1}..." -FormatArgs @($applyText, $(Get-FriendlyTargetUserName)))
             $appsList = Generate-AppsList
 
             if ($appsList.Count -eq 0) {
-                Write-Host "No valid apps were selected for removal" -ForegroundColor Yellow
+                Write-Host (Get-ConsoleText "No valid apps were selected for removal") -ForegroundColor Yellow
                 return $true
             }
 
-            Write-Host "$($appsList.Count) apps selected for removal"
+            Write-Host (Get-ConsoleText "{0} apps selected for removal" -FormatArgs @($($appsList.Count)))
             return (Remove-SelectedApps $appsList)
         }
         'RemoveGamingApps' {
@@ -72,6 +72,10 @@ function Invoke-FeatureApply {
         'ForceRemoveEdge' {
             Write-Host "> $applyText..."
             return (Invoke-ForceRemoveEdge)
+        }
+        'RemoveWindowsDefender' {
+            Write-Host "> $applyText..."
+            return (Invoke-RemoveWindowsDefender)
         }
         'DisableWidgets' {
             Write-Host "> $applyText..."
@@ -92,21 +96,21 @@ function Invoke-FeatureApply {
             return (Enable-WindowsFeature "Microsoft-Windows-Subsystem-Linux")
         }
         'ClearStart' {
-            Write-Host "> $applyText for user $(Get-UserName)..."
+            Write-Host (Get-ConsoleText "> {0} for user {1}..." -FormatArgs @($applyText, $(Get-UserName)))
             $startMenuBinFile = Get-StartMenuBinPathForUser -UserName (Get-UserName)
             if (-not [string]::IsNullOrWhiteSpace($startMenuBinFile)) {
                 return (Replace-StartMenu -startMenuBinFile $startMenuBinFile)
             }
-            Write-Warning "Unable to apply '$applyText': the Start menu path for user $(Get-UserName) could not be resolved."
+            Write-Warning (Get-ConsoleText "Unable to apply '{0}': the Start menu path for user {1} could not be resolved." -FormatArgs @($applyText, $(Get-UserName)))
             return $false
         }
         'ReplaceStart' {
-            Write-Host "> $applyText for user $(Get-UserName)..."
+            Write-Host (Get-ConsoleText "> {0} for user {1}..." -FormatArgs @($applyText, $(Get-UserName)))
             $startMenuBinFile = Get-StartMenuBinPathForUser -UserName (Get-UserName)
             if (-not [string]::IsNullOrWhiteSpace($startMenuBinFile)) {
                 return (Replace-StartMenu -startMenuBinFile $startMenuBinFile -startMenuTemplate $script:Params.Item("ReplaceStart"))
             }
-            Write-Warning "Unable to apply '$applyText': the Start menu path for user $(Get-UserName) could not be resolved."
+            Write-Warning (Get-ConsoleText "Unable to apply '{0}': the Start menu path for user {1} could not be resolved." -FormatArgs @($applyText, $(Get-UserName)))
             return $false
         }
         'ClearStartAllUsers' {
@@ -117,26 +121,26 @@ function Invoke-FeatureApply {
         }
         'DisableStoreSearchSuggestions' {
             if ($script:Params.ContainsKey("Sysprep")) {
-                Write-Host "> Disabling Microsoft Store search suggestions in the start menu for all users..."
+                Write-Host (Get-ConsoleText "> Disabling Microsoft Store search suggestions in the start menu for all users...")
                 return (Set-StoreSearchSuggestionsDisabledForAllUsers)
             }
 
-            Write-Host "> Disabling Microsoft Store search suggestions for user $(Get-UserName)..."
+            Write-Host (Get-ConsoleText "> Disabling Microsoft Store search suggestions for user {0}..." -FormatArgs @($(Get-UserName)))
             $storeDb = Get-StoreAppsDatabasePathForUser -UserName (Get-UserName)
             if ($storeDb) {
                 return (Set-StoreSearchSuggestionsDisabled -StoreAppsDatabase $storeDb)
             }
-            Write-Warning "Unable to disable Microsoft Store search suggestions because the Store database for user $(Get-UserName) could not be resolved."
+            Write-Warning (Get-ConsoleText "Unable to disable Microsoft Store search suggestions because the Store database for user {0} could not be resolved." -FormatArgs @($(Get-UserName)))
             return $false
         }
     }
     }
     catch {
-        Write-Warning "Failed to apply '$applyText': $($_.Exception.Message)"
+        Write-Warning (Get-ConsoleText "Failed to apply '{0}': {1}" -FormatArgs @($applyText, $($_.Exception.Message)))
         return $false
     }
 
-    Write-Warning "Unknown feature '$FeatureId' could not be applied."
+    Write-Warning (Get-ConsoleText "Unknown feature '{0}' could not be applied." -FormatArgs @($FeatureId))
     return $false
 }
 
@@ -158,7 +162,7 @@ function Invoke-FeatureUndo {
 
     $feature = if ($script:Features.ContainsKey($FeatureId)) { $script:Features[$FeatureId] } else { $null }
     if (-not $feature) {
-        Write-Warning "Unknown feature '$FeatureId' could not be undone."
+        Write-Warning (Get-ConsoleText "Unknown feature '{0}' could not be undone." -FormatArgs @($FeatureId))
         return $false
     }
 
@@ -185,16 +189,16 @@ function Invoke-FeatureUndo {
         switch ($FeatureId) {
             'DisableStoreSearchSuggestions' {
                 if ($script:Params.ContainsKey('Sysprep')) {
-                    Write-Host "> Re-enabling Microsoft Store search suggestions in the start menu for all users..."
+                    Write-Host (Get-ConsoleText "> Re-enabling Microsoft Store search suggestions in the start menu for all users...")
                     return (Set-StoreSearchSuggestionsEnabledForAllUsers)
                 }
 
-                Write-Host "> Re-enabling Microsoft Store search suggestions for user $(Get-UserName)..."
+                Write-Host (Get-ConsoleText "> Re-enabling Microsoft Store search suggestions for user {0}..." -FormatArgs @($(Get-UserName)))
                 $storeDb = Get-StoreAppsDatabasePathForUser -UserName (Get-UserName)
                 if ($storeDb) {
                     return (Set-StoreSearchSuggestionsEnabled -StoreAppsDatabase $storeDb)
                 }
-                Write-Warning "Unable to re-enable Microsoft Store search suggestions because the Store database for user $(Get-UserName) could not be resolved."
+                Write-Warning (Get-ConsoleText "Unable to re-enable Microsoft Store search suggestions because the Store database for user {0} could not be resolved." -FormatArgs @($(Get-UserName)))
                 return $false
             }
             'EnableWindowsSandbox' {
@@ -206,15 +210,21 @@ function Invoke-FeatureUndo {
                 if (-not (Disable-WindowsFeature 'Microsoft-Windows-Subsystem-Linux')) { return $false }
                 return (Disable-WindowsFeature 'VirtualMachinePlatform')
             }
+            'RemoveWindowsDefender' {
+                # There is nothing to undo from: the components are deleted, not disabled. An in-place
+                # upgrade (or a feature update) is the only way back.
+                Write-Warning (Get-ConsoleText "Microsoft Defender Antivirus cannot be restored by this tool. Use an in-place upgrade or a clean install to bring it back.")
+                return $false
+            }
         }
     }
 
     catch {
-        Write-Warning "Failed to undo '$undoText': $($_.Exception.Message)"
+        Write-Warning (Get-ConsoleText "Failed to undo '{0}': {1}" -FormatArgs @($undoText, $($_.Exception.Message)))
         return $false
     }
 
-    Write-Warning "Feature '$FeatureId' does not support undo."
+    Write-Warning (Get-ConsoleText "Feature '{0}' does not support undo." -FormatArgs @($FeatureId))
     return $false
 }
 
@@ -371,7 +381,7 @@ function Invoke-AllChanges {
         $range = @()
         if ($feature.MinVersion) { $range += "build $($feature.MinVersion) or newer" }
         if ($feature.MaxVersion) { $range += "build $($feature.MaxVersion) or older" }
-        Write-Warning "Skipping ${id}: it is only supported on Windows $($range -join ' and '), this system runs build $currentBuild."
+        Write-Warning (Get-ConsoleText "Skipping {0}: it is only supported on Windows {1}, this system runs build {2}." -FormatArgs @(${id}, $($range -join ' and '), $currentBuild))
 
         # Also drop it from the parameters, so that later steps (such as the reboot advice) only see what was applied
         [void]$script:Params.Remove($id)
@@ -411,10 +421,10 @@ function Invoke-AllChanges {
         }
 
         if ($script:Params.ContainsKey("WhatIf")) {
-            Write-Host "[WhatIf] Create registry backup" -ForegroundColor Cyan
+            Write-Host (Get-ConsoleText "[WhatIf] Create registry backup") -ForegroundColor Cyan
         }
         else {
-            Write-Host "> Creating registry backup..."
+            Write-Host (Get-ConsoleText "> Creating registry backup...")
             try {
                 $undoSyntheticFeatures = @($undoIds | ForEach-Object {
                     $f = if ($script:Features.ContainsKey($_)) { $script:Features[$_] } else { $null }
@@ -440,11 +450,11 @@ function Invoke-AllChanges {
             & $script:ApplyProgressCallback $step $totalSteps (Get-Translation -Key 'ApplyCreatingRestorePoint')
         }
         if ($script:Params.ContainsKey("WhatIf")) {
-            Write-Host "[WhatIf] Create system restore point" -ForegroundColor Cyan
+            Write-Host (Get-ConsoleText "[WhatIf] Create system restore point") -ForegroundColor Cyan
             Write-Host ""
         }
         else {
-            Write-Host "> Creating a system restore point..."
+            Write-Host (Get-ConsoleText "> Creating a system restore point...")
             $restorePointSucceeded = Invoke-SystemRestorePoint
             if (-not $restorePointSucceeded) {
                 if ($script:CancelRequested) { return }
@@ -477,17 +487,17 @@ function Invoke-AllChanges {
     # ================================================================
     if ($script:AppRemovalFailures -gt 0) {
         Write-Host ""
-        Write-Warning "$($script:AppRemovalFailures) app removal(s) failed. See output above for details."
+        Write-Warning (Get-ConsoleText "{0} app removal(s) failed. See output above for details." -FormatArgs @($($script:AppRemovalFailures)))
     }
 
     if ($script:FeatureFailures -gt 0) {
         Write-Host ""
-        Write-Warning "$($script:FeatureFailures) feature change(s) failed. See output above for details."
+        Write-Warning (Get-ConsoleText "{0} feature change(s) failed. See output above for details." -FormatArgs @($($script:FeatureFailures)))
     }
 
     if ($script:AppRemovalVerificationUnavailable) {
         Write-Host ""
-        Write-Warning "Unable to verify if all apps were uninstalled successfully."
+        Write-Warning (Get-ConsoleText "Unable to verify if all apps were uninstalled successfully.")
     }
 
 }

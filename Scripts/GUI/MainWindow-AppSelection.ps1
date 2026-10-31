@@ -243,7 +243,7 @@ function Get-AppRemovalScopeTarget {
         "AppRemovalScopeAllUsers" { return 'AllUsers' }
         "AppRemovalScopeCurrentUser" { return 'CurrentUser' }
         default {
-            Write-Warning "Unrecognized app-removal scope item '$($selectedItem.Name)'. Skipping app removal."
+            Write-Warning (Get-ConsoleText "Unrecognized app-removal scope item '{0}'. Skipping app removal." -FormatArgs @($($selectedItem.Name)))
             return $null
         }
     }
@@ -391,15 +391,40 @@ function Add-AppsToMainWindow {
 
     $script:MainWindowLastSelectedCheckbox = $null
 
+    $loaderScriptPath = $script:LoadAppsDetailsScriptPath
+    $helperScriptPath = $script:TestAppInWingetListScriptPath
+    $appsFilePath = $script:AppsListFilePath
     $onlyInstalled = [bool]$OnlyInstalledAppsBox.IsChecked
+    # The background runspace below has no $script:Lang, so the active language is resolved here
+    # and passed in. An empty string makes the loader fall back to the current UI culture.
+    $appLanguageCode = if ($script:Lang -and $script:Lang.LanguageCode) { $script:Lang.LanguageCode } else { '' }
 
-    # Use preloaded data if available; otherwise load in a background job to keep the UI responsive.
+    # Use preloaded data if available; otherwise load in background job
     if (-not $onlyInstalled -and $script:PreloadedAppData) {
         $rawAppData = $script:PreloadedAppData
         $script:PreloadedAppData = $null
     }
     else {
-        $rawAppData = Invoke-AppDetailsFromJsonAsync -OnlyInstalled:$onlyInstalled -InstalledList $ListOfApps
+        # Load apps details in a background job to keep the UI responsive.
+        # The helper is dot-sourced inside the job because the runspace
+        # does not inherit the parent scope's dot-sourced functions.
+        $rawAppData = Invoke-NonBlocking -ScriptBlock {
+            param($loaderScript, $helperScript, $appsListFilePath, $installedList, $onlyInstalled, $languageCode)
+
+            # The loader reports its failures through Get-ConsoleText, and a background runspace does
+            # not inherit dot-sourced functions or $script:Lang, so both are brought up here.
+            $fileIoScripts = Split-Path -Path $loaderScript -Parent
+            . (Join-Path $fileIoScripts 'Import-JsonFile.ps1')
+            . (Join-Path $fileIoScripts 'Import-LanguageFile.ps1')
+
+            $script:LanguagesPath = Join-Path (Join-Path (Split-Path -Path (Split-Path -Path $fileIoScripts -Parent) -Parent) 'Config') 'Languages'
+            $script:Lang = Import-LanguageFile -LanguageCode $languageCode
+
+            $script:AppsListFilePath = $appsListFilePath
+            . $helperScript
+            . $loaderScript
+            Import-AppDetailsFromJson -OnlyInstalled:$onlyInstalled -InstalledList $installedList -InitialCheckedFromJson:$false -LanguageCode $languageCode
+        } -ArgumentList $loaderScriptPath, $helperScriptPath, $appsFilePath, $ListOfApps, $onlyInstalled, $appLanguageCode
     }
 
     $appsToAdd = @($rawAppData | Where-Object { $_ -and ($_.AppId -or $_.FriendlyName) } | Sort-Object -Property FriendlyName)
@@ -620,11 +645,11 @@ function Initialize-MainWindowApps {
                 $listOfApps = $null
 
                 if ($OnlyInstalledAppsBox.IsChecked -and ($script:WingetInstalled -eq $true)) {
-                    Write-Host "Retrieving installed apps via winget..."
+                    Write-Host (Get-ConsoleText "Retrieving installed apps via winget...")
                     $listOfApps = Get-WingetInstalledApps -TimeOut 20 -NonBlocking
 
                     if ($null -eq $listOfApps) {
-                        Write-Warning "WinGet returned no data (command timed out or failed)"
+                        Write-Warning (Get-ConsoleText "WinGet returned no data (command timed out or failed)")
                         Show-MessageBox -Message (Get-Translation -Key 'AppSelectionWinGetLoadFailedMessage') -Title (Get-Translation -Key 'ErrorTitle') -Button 'OK' -Icon 'Error' | Out-Null
                         $OnlyInstalledAppsBox.IsChecked = $false
                     }
@@ -634,7 +659,7 @@ function Initialize-MainWindowApps {
                     -LoadingAppsIndicator $LoadingAppsIndicator -ImportConfigBtn $ImportConfigBtn -ListOfApps $listOfApps
             }
             catch {
-                Write-Warning "Failed to load apps list: $($_.Exception.Message)"
+                Write-Warning (Get-ConsoleText "Failed to load apps list: {0}" -FormatArgs @($($_.Exception.Message)))
                 $LoadingAppsIndicator.Visibility = 'Collapsed'
                 $OnlyInstalledAppsBox.IsHitTestVisible = $true
                 $Window.FindName('DeploymentApplyBtn').IsEnabled = $true

@@ -7,12 +7,12 @@
 #>
 function Invoke-ForceRemoveEdge {
     if ($script:Params.ContainsKey("WhatIf")) {
-        Write-Host "[WhatIf] Forcefully uninstall Microsoft Edge" -ForegroundColor Cyan
+        Write-Host (Get-ConsoleText "[WhatIf] Forcefully uninstall Microsoft Edge") -ForegroundColor Cyan
         return $true
     }
 
     try {
-        Write-Host "> Forcefully uninstalling Microsoft Edge..."
+        Write-Host (Get-ConsoleText "> Forcefully uninstalling Microsoft Edge...")
 
         $regView = [Microsoft.Win32.RegistryView]::Registry32
         $hklm = [Microsoft.Win32.RegistryKey]::OpenBaseKey([Microsoft.Win32.RegistryHive]::LocalMachine, $regView)
@@ -27,11 +27,11 @@ function Invoke-ForceRemoveEdge {
     # Remove edge
         $uninstallRegKey = $hklm.OpenSubKey('SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\Microsoft Edge')
         if ($null -eq $uninstallRegKey) {
-            Write-Host "Unable to forcefully uninstall Microsoft Edge, uninstaller could not be found" -ForegroundColor Red
+            Write-Host (Get-ConsoleText "Unable to forcefully uninstall Microsoft Edge, uninstaller could not be found") -ForegroundColor Red
             return $false
         }
 
-        Write-Host "Running uninstaller..."
+        Write-Host (Get-ConsoleText "Running uninstaller...")
         $uninstallString = $uninstallRegKey.GetValue('UninstallString') + ' --force-uninstall'
         $exitCode = Invoke-NonBlocking -ScriptBlock {
             param($cmd)
@@ -39,11 +39,11 @@ function Invoke-ForceRemoveEdge {
             return $process.ExitCode
         } -ArgumentList $uninstallString
         if ($exitCode -ne 0) {
-            Write-Warning "Microsoft Edge uninstaller failed with exit code $exitCode."
+            Write-Warning (Get-ConsoleText "Microsoft Edge uninstaller failed with exit code {0}." -FormatArgs @($exitCode))
             return $false
         }
 
-        Write-Host "Removing leftover files..."
+        Write-Host (Get-ConsoleText "Removing leftover files...")
         $cleanupSucceeded = $true
 
         $edgePaths = @(
@@ -60,16 +60,16 @@ function Invoke-ForceRemoveEdge {
             if (Test-Path -Path $path) {
                 try {
                     Remove-Item -Path $path -Force -Recurse -ErrorAction Stop
-                    Write-Host "  Removed $path" -ForegroundColor DarkGray
+                    Write-Host (Get-ConsoleText "  Removed {0}" -FormatArgs @($path)) -ForegroundColor DarkGray
                 }
                 catch {
-                    Write-Warning "Failed to remove Edge leftover '$path': $($_.Exception.Message)"
+                    Write-Warning (Get-ConsoleText "Failed to remove Edge leftover '{0}': {1}" -FormatArgs @($path, $($_.Exception.Message)))
                     $cleanupSucceeded = $false
                 }
             }
         }
 
-        Write-Host "Cleaning up registry..."
+        Write-Host (Get-ConsoleText "Cleaning up registry...")
         $registryCleanupSucceeded = $true
 
         # Remove MS Edge from autostart. Missing values are already-clean state,
@@ -87,15 +87,15 @@ function Invoke-ForceRemoveEdge {
         }
 
         if (-not $cleanupSucceeded -or -not $registryCleanupSucceeded) {
-            Write-Warning "Microsoft Edge was uninstalled, but some leftover files or autostart entries could not be removed."
+            Write-Warning (Get-ConsoleText "Microsoft Edge was uninstalled, but some leftover files or autostart entries could not be removed.")
             return $false
         }
 
-        Write-Host "Microsoft Edge was uninstalled"
+        Write-Host (Get-ConsoleText "Microsoft Edge was uninstalled")
         return $true
     }
     catch {
-        Write-Warning "Failed to forcefully uninstall Microsoft Edge: $($_.Exception.Message)"
+        Write-Warning (Get-ConsoleText "Failed to forcefully uninstall Microsoft Edge: {0}" -FormatArgs @($($_.Exception.Message)))
         return $false
     }
     finally {
@@ -127,7 +127,7 @@ function Remove-EdgeAutostartValue {
         return $true
     }
     catch {
-        Write-Warning "Failed to inspect Edge autostart entry '$Path\$Name': $($_.Exception.Message)"
+        Write-Warning (Get-ConsoleText "Failed to inspect Edge autostart entry '{0}\{1}': {2}" -FormatArgs @($Path, $Name, $($_.Exception.Message)))
         return $false
     }
 
@@ -140,7 +140,7 @@ function Remove-EdgeAutostartValue {
         return $true
     }
     catch {
-        Write-Warning "Failed to remove Edge autostart entry '$Path\$Name': $($_.Exception.Message)"
+        Write-Warning (Get-ConsoleText "Failed to remove Edge autostart entry '{0}\{1}': {2}" -FormatArgs @($Path, $Name, $($_.Exception.Message)))
         return $false
     }
 }

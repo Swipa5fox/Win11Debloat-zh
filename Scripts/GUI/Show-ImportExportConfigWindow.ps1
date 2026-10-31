@@ -462,7 +462,7 @@ function Export-Configuration {
 
     $categories = Show-ImportExportConfigWindow -Owner $Owner -UsesDarkMode $UsesDarkMode -Title (Get-Translation -Key 'ImportExportExportTitle') -Prompt (Get-Translation -Key 'ImportExportExportPrompt') -DisabledCategories $disabledCategories -CategoryDetails $categoryDetails -ActionLabel (Get-Translation -Key 'ImportExportExportActionLabel')
     if (-not $categories) {
-        Write-Host 'Export canceled.'
+        Write-Host (Get-ConsoleText 'Export canceled.')
         return
     }
 
@@ -486,24 +486,24 @@ function Export-Configuration {
     $saveDialog.FileName = "Win11Debloat-Config-$(Get-Date -Format 'yyyyMMdd').json"
 
     if ($saveDialog.ShowDialog($Owner) -ne $true) {
-        Write-Host 'Export save dialog canceled.'
+        Write-Host (Get-ConsoleText 'Export save dialog canceled.')
         return
     }
 
-    Write-Host "Exporting configuration to '$($saveDialog.FileName)'... (Categories: $($categories -join ', '))"
+    Write-Host (Get-ConsoleText "Exporting configuration to '{0}'... (Categories: {1})" -FormatArgs @($($saveDialog.FileName), $($categories -join ', ')))
 
     if ($script:Params.ContainsKey("WhatIf")) {
-        Write-Host "[WhatIf] Export configuration to '$($saveDialog.FileName)'" -ForegroundColor Cyan
+        Write-Host (Get-ConsoleText "[WhatIf] Export configuration to '{0}'" -FormatArgs @($($saveDialog.FileName))) -ForegroundColor Cyan
         Show-MessageBox -Message (Get-Translation -Key 'ImportExportWhatIfExportMessage') -Title (Get-Translation -Key 'ImportExportExportTitle') -Button 'OK' -Icon 'Information' | Out-Null
         return
     }
 
     if (Save-ToFile -Config $config -FilePath $saveDialog.FileName) {
-        Write-Host "Configuration exported successfully: $($saveDialog.FileName)"
+        Write-Host (Get-ConsoleText "Configuration exported successfully: {0}" -FormatArgs @($($saveDialog.FileName)))
         Show-MessageBox -Message (Get-Translation -Key 'ImportExportExportSuccessMessage') -Title (Get-Translation -Key 'ImportExportExportTitle') -Button 'OK' -Icon 'Information' | Out-Null
     }
     else {
-        Write-Error "Failed to export configuration to '$($saveDialog.FileName)'"
+        Write-Error (Get-ConsoleText "Failed to export configuration to '{0}'" -FormatArgs @($($saveDialog.FileName)))
         Show-MessageBox -Message (Get-Translation -Key 'ImportExportExportFailedMessage') -Title (Get-Translation -Key 'ErrorTitle') -Button 'OK' -Icon 'Error' | Out-Null
     }
 }
@@ -531,29 +531,29 @@ function Import-Configuration {
     $openDialog.DefaultExt = '.json'
 
     if ($openDialog.ShowDialog($Owner) -ne $true) {
-        Write-Host 'Import file dialog canceled.'
+        Write-Host (Get-ConsoleText 'Import file dialog canceled.')
         return
     }
 
-    Write-Host "Importing configuration from '$($openDialog.FileName)'..."
+    Write-Host (Get-ConsoleText "Importing configuration from '{0}'..." -FormatArgs @($($openDialog.FileName)))
 
     $config = Import-JsonFile -filePath $openDialog.FileName -expectedVersion '1.0'
     if (-not $config) {
-        Write-Error "Failed to read configuration file '$($openDialog.FileName)'"
+        Write-Error (Get-ConsoleText "Failed to read configuration file '{0}'" -FormatArgs @($($openDialog.FileName)))
         Show-MessageBox -Message (Get-Translation -Key 'ImportExportReadFailedMessage') -Title (Get-Translation -Key 'ImportExportInvalidConfigTitle') -Button 'OK' -Icon 'Error' | Out-Null
         return
     }
 
     $consistencyError = Test-ConfigConsistency -Config $config
     if ($consistencyError) {
-        Write-Error "Invalid configuration file '$($openDialog.FileName)': $consistencyError"
+        Write-Error (Get-ConsoleText "Invalid configuration file '{0}': {1}" -FormatArgs @($($openDialog.FileName), $consistencyError))
         Show-MessageBox -Message (Get-Translation -Key 'ImportExportInvalidConfigMessage' -FormatArgs @($consistencyError)) -Title (Get-Translation -Key 'ImportExportInvalidConfigTitle') -Button 'OK' -Icon 'Error' | Out-Null
         return
     }
 
     $availableCategories = Get-AvailableImportExportCategories -Config $config
 
-    Write-Host "Available categories in config: $($availableCategories -join ', ')"
+    Write-Host (Get-ConsoleText "Available categories in config: {0}" -FormatArgs @($($availableCategories -join ', ')))
 
     $appCount = @($config.Apps | Where-Object { $_ -is [string] -and -not [string]::IsNullOrWhiteSpace($_) }).Count
     $tweakCount = @($config.Tweaks | Where-Object { $_ -and $_.Name -and $_.Value -eq $true }).Count
@@ -561,7 +561,7 @@ function Import-Configuration {
 
     $categories = Show-ImportExportConfigWindow -Owner $Owner -UsesDarkMode $UsesDarkMode -Title (Get-Translation -Key 'ImportExportImportTitle') -Prompt (Get-Translation -Key 'ImportExportImportPrompt') -Categories $availableCategories -CategoryDetails $categoryDetails -ActionLabel (Get-Translation -Key 'ImportExportImportActionLabel')
     if (-not $categories) {
-        Write-Host 'Import canceled.'
+        Write-Host (Get-ConsoleText 'Import canceled.')
         return
     }
 
@@ -573,7 +573,7 @@ function Import-Configuration {
             Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
         )
 
-        Write-Host "Importing $($appIds.Count) app selection(s)."
+        Write-Host (Get-ConsoleText "Importing {0} app selection(s)." -FormatArgs @($($appIds.Count)))
         Set-ImportedApplications -AppsPanel $AppsPanel -AppIds $appIds
         
         if ($OnAppsImported) { 
@@ -582,15 +582,15 @@ function Import-Configuration {
     }
     if ($categories -contains 'System Tweaks' -and $config.Tweaks) {
         $tweakCount = @($config.Tweaks).Count
-        Write-Host "Importing $tweakCount tweak(s)."
+        Write-Host (Get-ConsoleText "Importing {0} tweak(s)." -FormatArgs @($tweakCount))
         Set-ImportedTweakSettings -Owner $Owner -UiControlMappings $UiControlMappings -TweakSettings @($config.Tweaks)
     }
     if ($categories -contains 'Deployment Settings' -and $config.Deployment) {
-        Write-Host 'Importing deployment settings.'
+        Write-Host (Get-ConsoleText 'Importing deployment settings.')
         Set-ImportedDeploymentSettings -Owner $Owner -UserSelectionCombo $UserSelectionCombo -OtherUsernameTextBox $OtherUsernameTextBox -DeploymentSettings @($config.Deployment)
     }
 
-    Write-Host 'Configuration imported successfully.'
+    Write-Host (Get-ConsoleText 'Configuration imported successfully.')
     Show-MessageBox -Message (Get-Translation -Key 'ImportExportImportSuccessMessage') -Title (Get-Translation -Key 'ImportExportImportTitle') -Button 'OK' -Icon 'Information' | Out-Null
 
     if ($OnImportCompleted) {

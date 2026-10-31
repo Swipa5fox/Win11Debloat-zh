@@ -220,8 +220,9 @@ Describe 'Test-RegistryKeySnapshotCanBeRestored' {
             SubKeys = @()
         }
 
-        { Test-RegistryKeySnapshotCanBeRestored -Snapshot $snapshot } |
-            Should -Throw '*Value was either too large or too small*'
+        # The conversion itself raises the error, and its message is localized by the .NET runtime,
+        # so only the fact that the value is rejected can be asserted language-independently.
+        { Test-RegistryKeySnapshotCanBeRestored -Snapshot $snapshot } | Should -Throw
     }
 
     It 'rejects a descendant that is not directly below its declared parent' {

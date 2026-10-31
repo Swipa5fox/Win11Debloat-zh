@@ -16,7 +16,6 @@
   "SettingsLanguageAuto": "System default",
   "SettingsSaveError": "Unable to save settings. Please try again.",
   "TitleBarClose": "Close",
-
   "MenuImportConfig": "Import config",
   "MenuImportConfigTooltip": "Import configuration",
   "MenuExportConfig": "Export config",
@@ -27,7 +26,6 @@
   "MenuReportBug": "Report a bug",
   "MenuLogs": "Logs",
   "MenuAbout": "About",
-
   "HomeTabHeader": "Home",
   "HomeTitle": "Welcome to Win11Debloat",
   "HomeSubtitle": "Your clean Windows experience is just a few clicks away!",
@@ -41,7 +39,6 @@
   "HomeDefaultModeBtnTooltip": "Quickly select the recommended settings",
   "HomeCustomSetupBtn": "Custom Setup",
   "HomeCustomSetupBtnTooltip": "Manually select your preferred settings",
-
   "AppRemovalTabHeader": "App Removal",
   "AppRemovalTitle": "App Removal",
   "AppRemovalSubtitle": "Select which apps you want to remove",
@@ -69,7 +66,6 @@
   "AppLegendOptional": "Optional",
   "AppLegendNotRecommendedTooltip": "[Not Recommended] Only remove if you know what you are doing",
   "AppLegendNotRecommended": "Not Recommended",
-
   "TweaksTabHeader": "Tweaks",
   "TweaksTitle": "System Tweaks",
   "TweaksSubtitle": "Select what changes you want to make, you can hover over settings for more information",
@@ -91,7 +87,6 @@
   "TweaksDetectAppliedTooltip": "Detect all tweaks currently applied for the current user",
   "TweaksSearchPlaceholder": "Search tweaks...",
   "TweaksSearchAutomationName": "Search tweaks",
-
   "DeployTabHeader": "Deployment Settings",
   "DeployTitle": "Deployment Settings",
   "DeploySubtitle": "Configure how the selected changes will be applied to your system",
@@ -108,23 +103,19 @@
   "DeployOptionRestartExplorer": "Restart the Windows Explorer process to apply most changes immediately",
   "DeployReviewChanges": "Review selected changes",
   "DeployApplyChanges": "Apply Changes",
-
   "BubbleViewChanges": "View the selected changes here",
-
   "AboutTitle": "About Win11Debloat",
   "AboutVersionLabel": "Version:",
   "AboutAuthorLabel": "Author:",
   "AboutProjectLabel": "Project:",
   "AboutDonationMessage": "Win11Debloat is a passion project that I maintain in my free time. If you've found this tool useful, please consider making a small donation to support its development. I really appreciate it!",
   "AboutKofiLink": "Support me on Ko-fi",
-
   "AppSelectionWindowTitle": "Win11Debloat Application Selection",
   "AppSelectionWindowInstructions": "Check apps that you wish to remove, uncheck apps that you wish to keep",
   "AppSelectionWindowCheckAll": "Check/Uncheck all",
   "AppSelectionWindowCheckAllAutomationName": "Check or Uncheck all",
   "AppSelectionWindowConfirm": "Confirm",
   "AppSelectionWindowCancel": "Cancel",
-
   "ApplyCancelTooltip": "Cancel",
   "ApplyInProgressTitle": "Applying Changes",
   "ApplyPreparing": "Preparing...",
@@ -146,13 +137,11 @@
   "ApplyCompletionMessageReady": "Your system is ready. Thanks for using Win11Debloat!",
   "ApplyCompletionTitleError": "Error",
   "ApplyCompletionMessageError": "An error occurred while applying changes: {0}",
-
   "NavBack": "Back",
   "NavNext": "Next",
   "NavProgressAppRemoval": "App Removal",
   "NavProgressSystemTweaks": "System Tweaks",
   "NavProgressDeploymentSettings": "Deployment Settings",
-
   "RestoreWindowTitle": "Restore Backup",
   "RestoreChooseRegistryTitle": "Restore Registry Backup",
   "RestoreChooseRegistryDescription": "Restore system registry configuration from a backup",
@@ -193,7 +182,6 @@
   "RestoreSelectRegistryFileDialogTitle": "Select Registry Backup File",
   "RestoreSelectStartMenuFileDialogTitle": "Select Start Menu Backup File",
   "RestoreUnknownFeature": "Unknown feature",
-
   "RestoreTargetUnknown": "Unknown",
   "RestoreTargetDefaultUserProfile": "Default user profile",
   "RestoreTargetCurrentUser": "Current user",
@@ -201,7 +189,6 @@
   "RestoreTargetCurrentUserNamed": "Current user ({0})",
   "RestoreTargetUserNamed": "User ({0})",
   "RestoreTargetUser": "User",
-
   "RestoreBackupRestoredTitle": "Backup Restored",
   "RestoreRegistryWhatIfMessage": "[WhatIf] Registry backup would be restored (no changes made).",
   "RestoreRegistrySuccessMessage": "Registry backup restored successfully. Some changes may require a restart to take effect.",
@@ -212,7 +199,6 @@
   "RestoreStartMenuCurrentUserSuccessMessage": "The Start Menu backup was successfully restored for the current user. The changes will apply the next time you sign in.",
   "RestoreOperationFailedMessage": "Restore failed: {0}",
   "RestoreUnexpectedError": "An unexpected error occurred.",
-
   "ImportExportCategoryApplications": "Applications",
   "ImportExportCategorySystemTweaks": "System Tweaks",
   "ImportExportCategoryDeploymentSettings": "Deployment Settings",
@@ -251,23 +237,19 @@
   "ImportExportTweaksSelected_one": "{0} tweak selected",
   "ImportExportTweaksSelected_other": "{0} tweaks selected",
   "ImportExportNoTweaksSelected": "No tweaks selected",
-
   "AppSelectionWinGetLoadFailedMessage": "Unable to load list of installed apps via WinGet.",
   "ErrorTitle": "Error",
-
   "AppSelectionStatusSelected_one": "{0} app selected for removal",
   "AppSelectionStatusSelected_other": "{0} apps selected for removal",
   "AppRemovalScopeDescriptionAllUsers": "Apps will be removed for all users and from the Windows image to prevent reinstallation for new users.",
   "AppRemovalScopeDescriptionCurrentUser": "Apps will only be removed for the current user.",
   "AppRemovalScopeDescriptionTargetUser": "Apps will only be removed for the specified target user.",
-
   "TweaksCategoryHelpTooltip": "Open the wiki for more info on '{0}' tweaks",
   "TweaksOptionNoChange": "No Change",
   "TweaksOptionApply": "Apply",
   "TweaksOptionDisable": "Disable",
   "TweaksOptionEnable": "Enable",
   "TweaksAlreadyAppliedTooltip": "This tweak is already applied and cannot be undone automatically. Visit the Win11Debloat wiki for instructions on how to manually revert this change.",
-
   "DeployChangeRemoveApps_one": "Remove {0} application",
   "DeployChangeRemoveApps_other": "Remove {0} applications",
   "DeployChangeUndoPrefix": "Undo: {0}",
@@ -278,7 +260,6 @@
   "DeployUserDescriptionOtherUser": "A different user profile on this system",
   "DeployUserDescriptionOtherUserNamed": "A different user profile on this system: {0}",
   "DeployUserDescriptionSysprep": "The default user template, affecting all new users created after this point. Useful for Sysprep deployment.",
-
   "LogsMenuTitle": "Logs",
   "LogsFolderNotFoundMessage": "No logs folder found at: {0}",
   "ExportConfigFailedTitle": "Export Configuration Failed",
@@ -297,11 +278,9 @@
   "InitializationErrorMessage": "An error occurred during initialization: {0}",
   "WhatIfModeTitle": "WhatIf Mode",
   "WhatIfModeMessage": "WhatIf mode is enabled. The script will not make any changes to your system in this mode.\n\nYou can observe the actions that would be taken by the script in the console output.",
-
   "ConfirmTitle": "Are you sure?",
   "ConfirmRemoveStoreMessage": "Are you sure that you wish to uninstall the Microsoft Store? This app cannot easily be reinstalled.",
   "ConfirmRemoveTerminalMessage": "Are you sure that you wish to remove Windows Terminal? Windows Terminal is the default command-line app for Windows. Ensure you are not running Win11Debloat via Windows Terminal before proceeding to avoid a mid-process failure.",
-
   "ConfigEmptyOrUnreadable": "Configuration is empty or could not be read.",
   "ConfigMissingVersion": "Configuration is missing a Version field.",
   "ConfigNoImportableData": "The configuration file contains no importable data.",
@@ -312,18 +291,15 @@
   "ConfigScopeRequiresCurrentUserTarget": "App removal scope 'Current user only' (AppRemovalScopeIndex 1) requires the deployment target 'Current User' (UserSelectionIndex 0).",
   "ConfigScopeRequiresOtherUserTarget": "App removal scope 'Target user only' (AppRemovalScopeIndex 2) requires the deployment target 'Other User' (UserSelectionIndex 1).",
   "ConfigScopeRequiresOtherUsername": "App removal scope 'Target user only' (AppRemovalScopeIndex 2) requires an 'OtherUsername' value.",
-
   "UsernameValidationEmpty": "Please enter a username",
   "UsernameValidationOwnUsername": "Cannot enter your own username, use 'Current User' option instead",
   "UsernameValidationNotFound": "User not found, please enter a valid username",
   "UsernameValidationFound": "User found: {0}",
-
   "RestorePointFailedTitle": "Restore Point Creation Failed",
   "RestorePointFailedMessage": "Failed to create a system restore point. Do you want to continue without a restore point?",
   "ForceRemoveEdgeTitle": "Force Uninstall Microsoft Edge?",
   "ForceRemoveEdgeMessage": "Unable to uninstall Microsoft Edge via WinGet. Would you like to forcefully uninstall it? NOT RECOMMENDED!",
   "RemovingAppsSubStep": "Removing apps ({0}/{1})",
-
   "BackupFileNotFound": "Backup file was not found: {0}",
   "BackupFileNotValidJson": "Failed to read backup file '{0}'. The file is not valid JSON.",
   "BackupValidationSingleError": "Validation failed: {0}",
@@ -356,7 +332,6 @@
   "BackupExecutableWarningMessage": "This backup contains executable registry settings that do not match the script's files. These could cause Windows or applications to potentially load malicious code.\n\nDo not restore registry backups obtained from unofficial sources. Continue only if you created this backup yourself and have reviewed the settings below.\n\n{0}",
   "BackupExecutableMismatchDetails": "Path: {0}\nValue name: {1}\nKind: {2}\nData: {3}",
   "BackupValueMustNotDefineKind": "Backup value '{0}' must not define Kind when Exists is false.",
-
   "StartMenuNoBackupFoundForUser": "No start menu backup file found for user {0}.",
   "StartMenuWhatIfRestoredForUser": "[WhatIf] Restored start menu for user {0}.",
   "StartMenuRestoredForUser": "Restored start menu for user {0}.",
@@ -364,5 +339,49 @@
   "StartMenuWhatIfRemovedDefaultProfile": "[WhatIf] Removed start2.bin for the default user profile.",
   "StartMenuRemovedDefaultProfile": "Removed start2.bin for the default user profile.",
   "StartMenuRemoveFailedDefaultProfile": "Failed to remove start2.bin for the default user profile. {0}",
-  "StartMenuNoUserLocationsFound": "No user start menu locations were found."
+  "StartMenuNoUserLocationsFound": "No user start menu locations were found.",
+  "DefenderRemovalConfirmTitle": "Remove Microsoft Defender Antivirus",
+  "DefenderRemovalConfirmHeading": "This permanently deletes Microsoft Defender Antivirus",
+  "DefenderRemovalConfirmBody": "The services, filter and early-launch drivers, policies, scheduled tasks and program folders are deleted, exactly as a manual removal would. This is not the same as disabling it.",
+  "DefenderRemovalConfirmPrompt": "This cannot be undone from Win11Debloat: recovery needs an in-place upgrade or a clean install, and a Windows feature upgrade reinstalls Defender. Type REMOVE to continue.",
+  "DefenderRemovalConfirmAction": "Remove permanently",
+  "DefenderTabHeader": "Windows Defender",
+  "DefenderTitle": "Windows Defender",
+  "DefenderSubtitle": "See exactly what Defender still has on this machine before deciding to remove it. Removal deletes its services, drivers, registry keys and firewall rules, and cannot be undone from this tool.",
+  "DefenderStatusTitle": "Current state",
+  "DefenderStatusInstalled": "Installed: Defender's services and components are still running.",
+  "DefenderStatusResidue": "Residue only: the main service is gone, {0} component(s) can still be cleaned up.",
+  "DefenderStatusAbsent": "Not installed: no trace of Defender was found.",
+  "DefenderStatusUnavailable": "Status check failed: {0}",
+  "DefenderProtectionNotApplicable": "Tamper protection: not applicable (Defender is gone).",
+  "DefenderProtectionTamperOn": "Tamper protection: on. Turn it off in Windows Security under Virus and threat protection, Manage settings first, otherwise the deletes are blocked.",
+  "DefenderProtectionTamperOff": "Tamper protection: off. The removal can run.",
+  "DefenderAntivirusNone": "Third-party antivirus: none detected. After the removal nothing on this machine will scan files.",
+  "DefenderAntivirusDetected": "Third-party antivirus: {0}. It keeps protecting this machine after Defender is gone.",
+  "DefenderRefreshButton": "Check again",
+  "DefenderRemovalTitle": "Permanent removal",
+  "DefenderRemovalWarning": "This cannot be undone: recovery needs an in-place upgrade or a clean install, and a Windows feature upgrade reinstalls Defender.",
+  "DefenderRemovalScope": "Deletes the service registrations, filter and early-launch drivers, policy and configuration keys, shell/COM/WinRT registration, autostart entries, firewall rules, scheduled tasks and program folders. A restart finishes the cleanup.",
+  "DefenderRemoveCheckBox": "Permanently remove Microsoft Defender (type REMOVE to confirm when applying)",
+  "DefenderRemovalUnavailableTooltip": "There is nothing left to remove on this machine.",
+  "DefenderVerifyTitle": "Leftover check",
+  "DefenderVerifyDescription": "Read-only check that changes nothing. Run it after the removal and the restart to see what is left.",
+  "DefenderVerifyButton": "Check for leftovers",
+  "DefenderVerifyIdle": "Select “Check for leftovers” to see the current state.",
+  "DefenderVerifyRunning": "Checking...",
+  "DefenderVerifyFailed": "Check failed: {0}",
+  "DefenderVerifySummary": "{0} item(s) checked: {1} ok, {2} warning(s), {3} failed.",
+  "DefenderVerifyAllPassed": "All checks passed: no trace of Microsoft Defender is left.",
+  "DefenderModuleChangeRemove": "Permanently remove Microsoft Defender (irreversible)",
+  "DefenderCheckServices": "Services and drivers",
+  "DefenderCheckRegistry": "Registry keys",
+  "DefenderCheckStartup": "Autostart entries",
+  "DefenderCheckCom": "COM registration",
+  "DefenderCheckDrivers": "Driver files",
+  "DefenderCheckFolders": "Program folders",
+  "DefenderCheckTasks": "Scheduled tasks",
+  "DefenderCheckFirewall": "Firewall rules",
+  "DefenderCheckConsistency": "Consistency",
+  "DefenderCheckFail": "fail",
+  "DefenderCheckWarn": "leftover"
 }

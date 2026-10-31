@@ -13,13 +13,13 @@ function Invoke-SystemRestorePoint {
         $SysRestore = Get-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion\SystemRestore" -Name "RPSessionInterval" -ErrorAction Stop
     }
     catch {
-        Write-Host "Error: Unable to determine whether System Restore is enabled: $($_.Exception.Message)" -ForegroundColor Red
+        Write-Host (Get-ConsoleText "Error: Unable to determine whether System Restore is enabled: {0}" -FormatArgs @($($_.Exception.Message))) -ForegroundColor Red
         $failed = $true
     }
 
     if (-not $failed -and $SysRestore.RPSessionInterval -eq 0) {
         # In GUI mode, skip the prompt and just try to enable it
-        if ($script:GuiWindow -or $isSilent -or $( Read-Host -Prompt "System restore is disabled, would you like to enable it and create a restore point? (y/n)") -eq 'y') {
+        if ($script:GuiWindow -or $isSilent -or $( Read-Host -Prompt (Get-ConsoleText "System restore is disabled, would you like to enable it and create a restore point? (y/n)")) -eq 'y') {
             try {
                 $enableResult = Invoke-NonBlocking -TimeoutSeconds 90 -ScriptBlock {
                     try {
@@ -81,7 +81,7 @@ function Invoke-SystemRestorePoint {
             $failed = $true
         }
         else {
-            Write-Host "Error: Failed to create system restore point" -ForegroundColor Red
+            Write-Host (Get-ConsoleText "Error: Failed to create system restore point") -ForegroundColor Red
             $failed = $true
         }
     }
@@ -97,14 +97,14 @@ function Invoke-SystemRestorePoint {
             }
         }
         elseif (-not $isSilent) {
-            Write-Host "Failed to create a system restore point. Do you want to continue without a restore point? (y/n)" -ForegroundColor Yellow
+            Write-Host (Get-ConsoleText "Failed to create a system restore point. Do you want to continue without a restore point? (y/n)") -ForegroundColor Yellow
             if ($( Read-Host ) -ne 'y') {
                 $script:CancelRequested = $true
                 return $false
             }
         }
 
-        Write-Host "Warning: Continuing without restore point" -ForegroundColor Yellow
+        Write-Host (Get-ConsoleText "Warning: Continuing without restore point") -ForegroundColor Yellow
         return $false
     }
 

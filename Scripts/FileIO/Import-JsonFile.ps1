@@ -11,7 +11,7 @@ function Import-JsonFile {
     
     if (-not (Test-Path $filePath)) {
         if (-not $optionalFile) {
-            Write-Error "File not found: $filePath"
+            Write-Error (Get-ConsoleText "File not found: {0}" -FormatArgs @($filePath))
         }
         return $null
     }
@@ -21,14 +21,14 @@ function Import-JsonFile {
         
         # Validate version if specified
         if ($expectedVersion -and $jsonContent.Version -and $jsonContent.Version -ne $expectedVersion) {
-            Write-Error "$(Split-Path $filePath -Leaf) version mismatch (expected $expectedVersion, found $($jsonContent.Version))"
+            Write-Error (Get-ConsoleText "{0} version mismatch (expected {1}, found {2})" -FormatArgs @($(Split-Path $filePath -Leaf), $expectedVersion, $($jsonContent.Version)))
             return $null
         }
         
         return $jsonContent
     }
     catch {
-        Write-Error "Failed to parse JSON file: $filePath"
+        Write-Error (Get-ConsoleText "Failed to parse JSON file: {0}" -FormatArgs @($filePath))
         return $null
     }
 }
