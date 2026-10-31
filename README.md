@@ -60,7 +60,7 @@
 
 ### 方法二：手动下载
 
-1. 到 [Releases](https://github.com/Swipa5fox/Win11Debloat-zh/releases/latest) 下载最新版的 `Win11Debloat-zh-v*.zip`，解压到任意目录。
+1. 到 [Releases](https://github.com/Swipa5fox/Win11Debloat-zh/releases/latest) 下载 `Win11Debloat.zip`（同页有 `SHA256SUMS` 可用于校验），解压到任意目录。
 2. 进入解压后的文件夹。
 3. 双击 **`Run.bat`** 启动，接受 UAC 提示。
 4. 按屏幕提示操作。
