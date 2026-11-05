@@ -30,7 +30,7 @@ function Show-RestoreBackupWindow {
                 throw 'Registry backup restore requested without a selected backup.'
             }
 
-            Write-Host "User confirmed registry restore for $($backup.Target)."
+            Write-Host (Get-ConsoleText "User confirmed registry restore for {0}." -FormatArgs @($backup.Target))
             $confirmUntrustedValues = {
                 param($mismatches)
                 $details = @($mismatches | ForEach-Object {
@@ -114,7 +114,7 @@ function Show-RestoreBackupWindow {
     }
     catch {
         $errorMessage = if ($_.Exception.Message) { $_.Exception.Message } else { Get-Translation -Key 'RestoreUnexpectedError' }
-        Write-Error "Restore operation failed: $errorMessage"
+        Write-Error (Get-ConsoleText "Restore operation failed: {0}" -FormatArgs @($errorMessage))
         Show-MessageBox -Title (Get-Translation -Key 'ErrorTitle') -Message (Get-Translation -Key 'RestoreOperationFailedMessage' -FormatArgs @($errorMessage)) -Icon Error
         return [PSCustomObject]@{
             RestoredRegistry = $false

@@ -165,7 +165,7 @@ function ConvertTo-NormalizedRegistryBackup {
     }
 
     if ($errors.Count -gt 0) {
-        Write-Error "Backup validation failed: $($errors -join ' ')"
+        Write-Error (Get-ConsoleText "Backup validation failed: {0}" -FormatArgs @($($errors -join ' ')))
         if ($errors.Count -eq 1) {
             throw (Get-Translation -Key 'BackupValidationSingleError' -FormatArgs @($errors[0]))
         }
@@ -222,14 +222,14 @@ function Restore-RegistryBackupState {
     $friendlyTarget = Get-FriendlyRegistryBackupTarget -Target ([string]$Backup.Target)
 
     if ($script:Params.ContainsKey("WhatIf")) {
-        Write-Host "[WhatIf] Restore registry backup for $friendlyTarget" -ForegroundColor Cyan
+        Write-Host (Get-ConsoleText "[WhatIf] Restore registry backup for {0}" -FormatArgs @($friendlyTarget)) -ForegroundColor Cyan
         return [PSCustomObject]@{ Result = $true }
     }
 
     if (@($Backup.ExecutableValueWarnings).Count -gt 0) {
-        Write-Host "Registry restore for $friendlyTarget requires confirmation of $(@($Backup.ExecutableValueWarnings).Count) unrecognized executable setting(s)." -ForegroundColor Yellow
+        Write-Host (Get-ConsoleText "Registry restore for {0} requires confirmation of {1} unrecognized executable setting(s)." -FormatArgs @($friendlyTarget, $(@($Backup.ExecutableValueWarnings).Count))) -ForegroundColor Yellow
         foreach ($mismatch in $Backup.ExecutableValueWarnings) {
-            Write-Host "Unrecognized executable registry setting: $($mismatch | ConvertTo-Json -Compress -Depth 10)"
+            Write-Host (Get-ConsoleText "Unrecognized executable registry setting: {0}" -FormatArgs @($($mismatch | ConvertTo-Json -Compress -Depth 10)))
         }
         if (-not $ConfirmUntrustedValues) {
             Write-Host 'Registry restore blocked: executable settings require explicit user confirmation.'
@@ -246,22 +246,22 @@ function Restore-RegistryBackupState {
     $restoreAction = {
         param($normalizedBackup)
 
-        Write-Host "Applying registry restore from $(@($normalizedBackup.RegistryKeys).Count) root snapshot(s)."
+        Write-Host (Get-ConsoleText "Applying registry restore from {0} root snapshot(s)." -FormatArgs @($(@($normalizedBackup.RegistryKeys).Count)))
         foreach ($rootSnapshot in @($normalizedBackup.RegistryKeys)) {
             Restore-RegistryKeySnapshot -Snapshot $rootSnapshot
         }
     }
 
-    Write-Host "Starting restore for $friendlyTarget."
+    Write-Host (Get-ConsoleText "Starting restore for {0}." -FormatArgs @($friendlyTarget))
 
     if ($Backup.Target -eq 'DefaultUserProfile' -or $Backup.Target -like 'User:*') {
-        Write-Host "Restore requires loading target user hive."
+        Write-Host (Get-ConsoleText "Restore requires loading target user hive.")
         Invoke-WithLoadedRestoreHive -Target $Backup.Target -ScriptBlock $restoreAction -ArgumentObject $Backup
-        Write-Host "Restore completed for $friendlyTarget."
+        Write-Host (Get-ConsoleText "Restore completed for {0}." -FormatArgs @($friendlyTarget))
         return [PSCustomObject]@{ Result = $true }
     }
 
     & $restoreAction $Backup
-    Write-Host "Restore completed for $friendlyTarget."
+    Write-Host (Get-ConsoleText "Restore completed for {0}." -FormatArgs @($friendlyTarget))
     return [PSCustomObject]@{ Result = $true }
 }

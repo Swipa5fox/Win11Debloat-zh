@@ -33,7 +33,7 @@ function Save-ToFile {
         return $true
     }
     catch {
-        Write-Error "Failed to write '$FilePath': $($_.Exception.Message)"
+        Write-Error (Get-ConsoleText "Failed to write '{0}': {1}" -FormatArgs @($FilePath, $($_.Exception.Message)))
         return $false
     }
 }

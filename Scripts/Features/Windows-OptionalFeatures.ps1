@@ -11,7 +11,7 @@ function Enable-WindowsFeature {
     )
 
     if ($script:Params.ContainsKey("WhatIf")) {
-        Write-Host "[WhatIf] Enable Windows feature: $FeatureName" -ForegroundColor Cyan
+        Write-Host (Get-ConsoleText "[WhatIf] Enable Windows feature: {0}" -FormatArgs @($FeatureName)) -ForegroundColor Cyan
         return $true
     }
 
@@ -36,13 +36,13 @@ function Enable-WindowsFeature {
         } -ArgumentList $FeatureName
     }
     catch {
-        Write-Warning "Failed to enable Windows feature '$FeatureName': $($_.Exception.Message)"
+        Write-Warning (Get-ConsoleText "Failed to enable Windows feature '{0}': {1}" -FormatArgs @($FeatureName, $($_.Exception.Message)))
         return $false
     }
 
     if (-not $result -or -not $result.Success) {
         $details = if ($result -and $result.Error) { ": $($result.Error)" } else { '' }
-        Write-Warning "Failed to enable Windows feature '$FeatureName'$details"
+        Write-Warning (Get-ConsoleText "Failed to enable Windows feature '{0}'{1}" -FormatArgs @($FeatureName, $details))
         return $false
     }
 
@@ -63,7 +63,7 @@ function Disable-WindowsFeature {
     )
 
     if ($script:Params.ContainsKey("WhatIf")) {
-        Write-Host "[WhatIf] Disable Windows feature: $FeatureName" -ForegroundColor Cyan
+        Write-Host (Get-ConsoleText "[WhatIf] Disable Windows feature: {0}" -FormatArgs @($FeatureName)) -ForegroundColor Cyan
         return $true
     }
 
@@ -88,13 +88,13 @@ function Disable-WindowsFeature {
         } -ArgumentList $FeatureName
     }
     catch {
-        Write-Warning "Failed to disable Windows feature '$FeatureName': $($_.Exception.Message)"
+        Write-Warning (Get-ConsoleText "Failed to disable Windows feature '{0}': {1}" -FormatArgs @($FeatureName, $($_.Exception.Message)))
         return $false
     }
 
     if (-not $result -or -not $result.Success) {
         $details = if ($result -and $result.Error) { ": $($result.Error)" } else { '' }
-        Write-Warning "Failed to disable Windows feature '$FeatureName'$details"
+        Write-Warning (Get-ConsoleText "Failed to disable Windows feature '{0}'{1}" -FormatArgs @($FeatureName, $details))
         return $false
     }
 

@@ -104,7 +104,7 @@ function Invoke-RegistryDeleteValueOperation {
     if ($null -eq $KeyInfo.Key) {
         $valueName = Get-NormalizedRegistryValueName -ValueName $Operation.ValueName
         $displayValueName = if ([string]::IsNullOrEmpty($valueName)) { '(Default)' } else { $valueName }
-        Write-Verbose "Unable to find or open key '$($Operation.KeyPath)' and value '$displayValueName'"
+        Write-Verbose (Get-ConsoleText "Unable to find or open key '{0}' and value '{1}'" -FormatArgs @($($Operation.KeyPath), $displayValueName))
         return
     }
 
@@ -152,11 +152,11 @@ function Write-RegistryOperationAccessDeniedWarning {
     if ($operationType -eq 'SetValue' -or $operationType -eq 'DeleteValue') {
         $valueName = Get-NormalizedRegistryValueName -ValueName $Operation.ValueName
         $displayValueName = if ([string]::IsNullOrEmpty($valueName)) { '(Default)' } else { $valueName }
-        Write-Warning "Skipping operation '$operationType' on key '$keyPath' value '$displayValueName' due to access restrictions: $ExceptionMessage"
+        Write-Warning (Get-ConsoleText "Skipping operation '{0}' on key '{1}' value '{2}' due to access restrictions: {3}" -FormatArgs @($operationType, $keyPath, $displayValueName, $ExceptionMessage))
         return
     }
 
-    Write-Warning "Skipping operation '$operationType' on key '$keyPath' due to access restrictions: $ExceptionMessage"
+    Write-Warning (Get-ConsoleText "Skipping operation '{0}' on key '{1}' due to access restrictions: {2}" -FormatArgs @($operationType, $keyPath, $ExceptionMessage))
 }
 
 function Invoke-RegistryOperation {
@@ -209,7 +209,7 @@ function Invoke-RegistryOperationsFromRegFile {
     $totalOperations = $operations.Count
 
     if ($script:Params.ContainsKey("WhatIf")) {
-        Write-Host "[WhatIf] Apply $totalOperations registry changes from '$RegFilePath'" -ForegroundColor Cyan
+        Write-Host (Get-ConsoleText "[WhatIf] Apply {0} registry changes from '{1}'" -FormatArgs @($totalOperations, $RegFilePath)) -ForegroundColor Cyan
         return $true
     }
 
@@ -228,7 +228,7 @@ function Invoke-RegistryOperationsFromRegFile {
     }
 
     if ($accessDeniedCount -gt 0) {
-        Write-Warning "Registry fallback import completed with $accessDeniedCount access-restricted operation(s) skipped in '$RegFilePath'."
+        Write-Warning (Get-ConsoleText "Registry fallback import completed with {0} access-restricted operation(s) skipped in '{1}'." -FormatArgs @($accessDeniedCount, $RegFilePath))
         return $false
     }
 

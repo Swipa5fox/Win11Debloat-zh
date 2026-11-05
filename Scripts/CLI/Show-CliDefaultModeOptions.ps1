@@ -10,12 +10,12 @@ function Show-CliDefaultModeOptions {
         $RemoveAppsInput = Show-CliDefaultModeAppRemovalOptions
 
         if ($RemoveAppsInput -eq '2' -and ($script:SelectedApps.contains('Microsoft.XboxGameOverlay') -or $script:SelectedApps.contains('Microsoft.XboxGamingOverlay')) -and 
-          $( Read-Host -Prompt "Disable Game Bar integration and game/screen recording? This also stops ms-gamingoverlay and ms-gamebar popups (y/n)" ) -eq 'y') {
+          $( Read-Host -Prompt (Get-ConsoleText "Disable Game Bar integration and game/screen recording? This also stops ms-gamingoverlay and ms-gamebar popups (y/n)") ) -eq 'y') {
             $DisableGameBarIntegrationInput = $true;
         }
     }
 
-    Write-CliHeader 'Default Mode'
+    Write-CliHeader (Get-ConsoleText 'Default Mode')
 
     try {
         # Select app removal options based on user input
@@ -38,7 +38,7 @@ function Show-CliDefaultModeOptions {
         Import-Settings -filePath $script:DefaultSettingsFilePath -expectedVersion "1.0"
     }
     catch {
-        Write-Error "Failed to load settings from DefaultSettings.json file: $_"
+        Write-Error (Get-ConsoleText "Failed to load settings from DefaultSettings.json file: {0}" -FormatArgs @($_))
         Wait-ForKeyPress -ExitCode 1
     }
 
@@ -50,5 +50,5 @@ function Show-CliDefaultModeOptions {
     }
 
     Write-PendingChanges
-    Write-CliHeader 'Default Mode'
+    Write-CliHeader (Get-ConsoleText 'Default Mode')
 }

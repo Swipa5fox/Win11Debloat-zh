@@ -379,14 +379,14 @@ function ConvertTo-CompatibleRegistryKeySnapshots {
                 }
                 else {
                     $reference = Get-RegistryValueReferenceForError -SnapshotPath $snapshot.Path -ValueName $valueName
-                    Write-Warning "Skipping unknown backup registry value '$reference'."
+                    Write-Warning (Get-ConsoleText "Skipping unknown backup registry value '{0}'." -FormatArgs @($reference))
                 }
             }
         )
 
         if ($null -eq $planMatch) {
             if (@($snapshot.Values).Count -eq 0) {
-                Write-Warning "Skipping unknown backup registry key '$($snapshot.Path)'."
+                Write-Warning (Get-ConsoleText "Skipping unknown backup registry key '{0}'." -FormatArgs @($($snapshot.Path)))
             }
             # Discard the entire unknown subtree, including any deletion request.
             $null = @(ConvertTo-CompatibleRegistryKeySnapshots -RegistryKeys @($snapshot.SubKeys) -PlanMap @{})
@@ -462,7 +462,7 @@ function Get-SelectedRegistryFeaturesForBackupValidation {
     $selectedRegistryFeatures = New-Object System.Collections.Generic.List[object]
     foreach ($featureId in @($SelectedFeatureIds)) {
         if (-not $script:Features.ContainsKey($featureId)) {
-            Write-Warning "Skipping unknown backup feature '$featureId'."
+            Write-Warning (Get-ConsoleText "Skipping unknown backup feature '{0}'." -FormatArgs @($featureId))
             continue
         }
 

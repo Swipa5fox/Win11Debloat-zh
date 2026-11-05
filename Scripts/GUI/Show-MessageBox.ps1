@@ -70,7 +70,7 @@ function Show-MessageBox {
         # breaks (a bad marker added to MessageBoxSchema, not a missing app-wide translation - that
         # never reaches this function), fall back to a plain native MessageBox rather than losing
         # the ability to show any error dialog at all.
-        Write-Warning "Falling back to a native message box, themed dialog failed to localize: $($_.Exception.Message)"
+        Write-Warning (Get-ConsoleText "Falling back to a native message box, themed dialog failed to localize: {0}" -FormatArgs @($($_.Exception.Message)))
 
         # Hide overlay before showing the fallback (only if this dialog was the one that showed it)
         if ($overlay -and -not $overlayWasAlreadyVisible) {

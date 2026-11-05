@@ -74,6 +74,11 @@ function Import-LanguageContent {
     }
     if (@($catalogs.Values | Where-Object { -not $_ }).Count) { return $null }
 
+    # Console.json is optional and not part of the required catalog list: only this fork ships one, so a
+    # language folder without it has to load anyway. Get-ConsoleText falls back to the English source
+    # text when the section is missing or lacks the key.
+    $console = Import-JsonFile -filePath (Join-Path $folderPath 'Console.json') -optionalFile
+
     return [PSCustomObject]@{
         LanguageCode = $LanguageFolder
         Chrome       = $catalogs.Chrome
@@ -81,6 +86,7 @@ function Import-LanguageContent {
         UiGroups     = $catalogs.Features.UiGroups
         Categories   = $catalogs.Categories
         Apps         = $catalogs.Apps
+        Console      = $console
     }
 }
 
@@ -513,4 +519,117 @@ function ConvertTo-LocalizedXaml {
     }
 
     return $result
+}
+
+<#
+    .SYNOPSIS
+        Returns the localized text for a console or log message, keyed by its English source text.
+
+    .DESCRIPTION
+        Console and log output is written as inline English literals all over the scripts, well
+        before the GUI localization framework existed. Rather than inventing a semantic key for
+        every one of those strings and parking them in Chrome.json (a GUI-shaped file), the English
+        source text itself is the key: a Console.json in the active language folder maps English
+        source -> localized text.
+
+        Lookup walks the same chain as every other translation (active language, then en-US), and
+        falls back to the English source text itself. That fallback is what keeps a partially
+        translated or entirely missing Console.json printing readable English instead of a key
+        name or an empty line.
+
+        Callers that run without an active language (the standalone launcher and the background
+        runspaces that load the apps list) resolve Console.json for the current UI culture on
+        first use instead, so console text stays localized there too.
+
+        -FormatArgs fills the {0}, {1}... placeholders in the resolved text. Call sites that used
+        string interpolation convert their variables into placeholders in first-seen order, so the
+        numbering here matches the order the call site passed them in.
+#>
+function Get-ConsoleText {
+    param(
+        [Parameter(Mandatory, Position = 0)]
+        [string]$Text,
+        [object[]]$FormatArgs = $null,
+        [object]$Lang = $script:Lang
+    )
+
+    # $global:Win11DebloatConsoleLanguage pins console output to one language. The Pester suite sets
+    # it so assertions can match the English source strings regardless of the machine's UI culture;
+    # it is never set during a normal run.
+    if ($global:Win11DebloatConsoleLanguage) {
+        $Lang = Get-ConsoleFallbackLanguage
+    }
+
+    $chain = @(Get-LanguageFallbackChain -Lang $Lang)
+    if ($chain.Count -eq 0) {
+        $chain = @(Get-ConsoleFallbackLanguage)
+    }
+
+    $resolved = $Text
+
+    foreach ($candidateLang in $chain) {
+        if (-not $candidateLang.Console) { continue }
+
+        $entry = $candidateLang.Console.PSObject.Properties[$Text]
+        if ($entry) {
+            $resolved = [string]$entry.Value
+            break
+        }
+    }
+
+    if ($null -ne $FormatArgs -and $FormatArgs.Count -gt 0) {
+        try {
+            return $resolved -f $FormatArgs
+        }
+        catch {
+            # A malformed placeholder in a translation must never take down a console message.
+            return $resolved
+        }
+    }
+
+    return $resolved
+}
+
+<#
+    .SYNOPSIS
+        Lazily loads Console.json for the current UI culture, for callers with no active language.
+
+    .DESCRIPTION
+        Standalone launcher scripts and background runspaces print console text without ever calling
+        Import-LanguageFile, so $script:Lang is empty there. Rather than making every such call site
+        load a full language, Get-ConsoleText falls back to this: resolve the folder for the current
+        UI culture (same exact/prefix/en-US rules) and read just Console.json. The result is cached
+        per runspace, including the negative case, so a language without Console.json pays the
+        directory probe only once.
+#>
+function Get-ConsoleFallbackLanguage {
+    if (-not $script:ConsoleFallbackLoaded) {
+        $script:ConsoleFallbackLoaded = $true
+        $script:ConsoleFallbackLanguage = $null
+
+        # $PSScriptRoot is Scripts/FileIO, so two levels up is the Win11Debloat root.
+        $languagesPath = $script:LanguagesPath
+        if (-not $languagesPath) {
+            $languagesPath = Join-Path (Split-Path -Path (Split-Path -Path $PSScriptRoot -Parent) -Parent) 'Config\Languages'
+        }
+
+        if (Test-Path -LiteralPath $languagesPath -PathType Container) {
+            $cultureName = if ($global:Win11DebloatConsoleLanguage) {
+                [string]$global:Win11DebloatConsoleLanguage
+            }
+            else {
+                [System.Globalization.CultureInfo]::CurrentUICulture.Name
+            }
+
+            $resolved = Resolve-LanguageFolder -LanguageCode $cultureName -LanguagesPath $languagesPath
+            $consolePath = Join-Path (Join-Path $languagesPath $resolved) 'Console.json'
+
+            $script:ConsoleFallbackLanguage = [PSCustomObject]@{
+                LanguageCode = $resolved
+                Console      = if (Test-Path -LiteralPath $consolePath) { Import-JsonFile -filePath $consolePath } else { $null }
+            }
+        }
+    }
+
+    return $script:ConsoleFallbackLanguage
 }

@@ -32,6 +32,8 @@ Describe 'XAML UI contracts' {
             'Show-ImportExportConfigWindow.ps1' = @{ dlg = 'ImportExportConfigWindow.xaml'; owner = 'MainWindow.xaml' }
             'Show-RestoreBackupDialog.ps1' = @{ window = 'RestoreBackupWindow.xaml'; ownerWindow = 'MainWindow.xaml' }
             'Show-Bubble.ps1' = @{ bubblePanel = 'BubbleHint.xaml' }
+            'Confirm-DefenderRemoval.ps1' = @{ dialog = 'DefenderRemovalConfirmWindow.xaml'; ownerWindow = 'MainWindow.xaml' }
+            'MainWindow-Defender.ps1' = @{ window = 'MainWindow.xaml' }
         }
         $schemaNames = @{}
         foreach ($xamlFile in $script:XamlFiles) {

@@ -4,13 +4,13 @@ function Write-CliHeader {
         $title
     )
 
-    $fullTitle = " Win11Debloat Script - $title"
+    $fullTitle = Get-ConsoleText " Win11Debloat Script - {0}" -FormatArgs @($title)
 
     if ($script:Params.ContainsKey("Sysprep")) {
-        $fullTitle = "$fullTitle (Sysprep mode)"
+        $fullTitle = Get-ConsoleText "{0} (Sysprep mode)" -FormatArgs @($fullTitle)
     }
     else {
-        $fullTitle = "$fullTitle (User: $(Get-UserName))"
+        $fullTitle = Get-ConsoleText "{0} (User: {1})" -FormatArgs @($fullTitle, (Get-UserName))
     }
 
     Clear-Host

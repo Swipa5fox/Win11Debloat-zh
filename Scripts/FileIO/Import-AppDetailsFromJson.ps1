@@ -33,7 +33,7 @@ function Import-AppDetailsFromJson {
         $jsonContent = Get-Content -Path $script:AppsListFilePath -Raw -Encoding UTF8 | ConvertFrom-Json
     }
     catch {
-        Write-Error "Failed to read Apps.json: $_"
+        Write-Error (Get-ConsoleText "Failed to read Apps.json: {0}" -FormatArgs @($_))
         return $apps
     }
 

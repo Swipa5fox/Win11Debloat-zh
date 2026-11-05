@@ -40,7 +40,7 @@ function Import-AppsFromFile {
         return $appsList
     } 
     catch {
-        Write-Error "Unable to read apps list from file: $appsFilePath"
+        Write-Error (Get-ConsoleText "Unable to read apps list from file: {0}" -FormatArgs @($appsFilePath))
         Wait-ForKeyPress -ExitCode 1
     }
 }

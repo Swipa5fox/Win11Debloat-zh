@@ -15,6 +15,23 @@ $ErrorActionPreference = 'Stop'
 $repositoryRoot = Split-Path -Parent $PSScriptRoot
 $testPath = Join-Path $repositoryRoot 'Tests'
 
+# A test file dot-sources the one script under test and nothing else, but those scripts report through
+# Get-ConsoleText. Stand in for the language loader with the same passthrough it uses when no
+# Console.json applies: the English source string comes back unchanged, which is what the assertions
+# expect. Files that care define their own replacement inside their own scope.
+function global:Get-ConsoleText {
+    param(
+        [Parameter(Mandatory, Position = 0)][string]$Text,
+        [object[]]$FormatArgs = $null
+    )
+
+    if ($null -ne $FormatArgs -and $FormatArgs.Count -gt 0) {
+        try { return ($Text -f $FormatArgs) } catch { return $Text }
+    }
+
+    return $Text
+}
+
 if (-not (Get-Module -ListAvailable -Name Pester | Where-Object { $_.Version.Major -eq 5 })) {
     if (-not $Bootstrap) {
         Write-Error 'Pester 5 is required. Install it with: .\Scripts\Run-Tests.ps1 -Bootstrap'

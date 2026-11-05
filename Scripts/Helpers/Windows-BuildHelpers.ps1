@@ -6,7 +6,7 @@ function Get-CurrentWindowsBuild {
         $currentBuild = Get-ItemPropertyValue 'HKLM:\SOFTWARE\Microsoft\Windows NT\CurrentVersion' CurrentBuild -ErrorAction Stop
     }
     catch {
-        Write-Verbose "Unable to read the Windows build number: $($_.Exception.Message)"
+        Write-Verbose (Get-ConsoleText "Unable to read the Windows build number: {0}" -FormatArgs @($($_.Exception.Message)))
         return $null
     }
     if ([int]::TryParse([string]$currentBuild, [ref]$build)) { return $build }

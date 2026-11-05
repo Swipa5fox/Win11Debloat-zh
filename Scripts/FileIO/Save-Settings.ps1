@@ -4,7 +4,7 @@
 #>
 function Save-Settings {
     if ($script:Params.ContainsKey("WhatIf")) {
-        Write-Host "[WhatIf] Save settings to LastUsedSettings.json" -ForegroundColor Cyan
+        Write-Host (Get-ConsoleText "[WhatIf] Save settings to LastUsedSettings.json") -ForegroundColor Cyan
         return
     }
 
@@ -13,8 +13,12 @@ function Save-Settings {
         "Settings" = @()
     }
     
+    # Irreversible actions are never replayed from a saved preset: the user selects them again and
+    # confirms explicitly, so "run saved settings" cannot silently retry a destructive removal.
+    $excludedSettings = @('RemoveWindowsDefender')
+
     foreach ($param in $script:Params.Keys) {
-        if ($script:ControlParams -notcontains $param -and $script:Features.ContainsKey($param)) {
+        if ($script:ControlParams -notcontains $param -and $excludedSettings -notcontains $param -and $script:Features.ContainsKey($param)) {
             $value = $script:Params[$param]
 
             $settings.Settings += @{
@@ -26,6 +30,6 @@ function Save-Settings {
 
     if (-not (Save-ToFile -Config $settings -FilePath $script:SavedSettingsFilePath)) {
         Write-Output ""
-        Write-Host "Error: Failed to save settings to LastUsedSettings.json file" -ForegroundColor Red
+        Write-Host (Get-ConsoleText "Error: Failed to save settings to LastUsedSettings.json file") -ForegroundColor Red
     }
 }

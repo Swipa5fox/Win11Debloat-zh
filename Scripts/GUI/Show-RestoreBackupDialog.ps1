@@ -274,7 +274,7 @@ function Show-RestoreBackupDialog {
             $revertibleFeaturesList = @($forwardFeatureLists.Revertible)
             $reappliedFeaturesList = @($undoFeatureLists.Revertible)
             $nonRevertibleFeaturesList = @($combinedFeatureLists.NonRevertible)
-            Write-Host "Backup overview prepared. Reverted=$($revertibleFeaturesList.Count), ReApplied=$($reappliedFeaturesList.Count), NonRevertible=$($nonRevertibleFeaturesList.Count)"
+            Write-Host (Get-ConsoleText "Backup overview prepared. Reverted={0}, ReApplied={1}, NonRevertible={2}" -FormatArgs @($($revertibleFeaturesList.Count), $($reappliedFeaturesList.Count), $($nonRevertibleFeaturesList.Count)))
 
             if ($revertibleFeaturesList.Count -eq 0 -and $reappliedFeaturesList.Count -eq 0) {
                 throw (Get-Translation -Key 'RestoreNoRestorableChangesError')
@@ -321,7 +321,7 @@ function Show-RestoreBackupDialog {
                 return
             }
 
-            Write-Host "Backup file selected: $($openDialog.FileName)"
+            Write-Host (Get-ConsoleText "Backup file selected: {0}" -FormatArgs @($($openDialog.FileName)))
 
             try {
                 $selectedBackup = Import-RegistryBackup -FilePath $openDialog.FileName
@@ -331,7 +331,7 @@ function Show-RestoreBackupDialog {
                 }
             }
             catch {
-                Write-Error "Failed to load registry backup '$($openDialog.FileName)': $($_.Exception.Message)" -ErrorAction Continue
+                Write-Error (Get-ConsoleText "Failed to load registry backup '{0}': {1}" -FormatArgs @($($openDialog.FileName), $($_.Exception.Message))) -ErrorAction Continue
                 Show-MessageBox -Owner $window -Title (Get-Translation -Key 'RestoreInvalidBackupTitle') -Message (Get-Translation -Key 'RestoreInvalidBackupMessage' -FormatArgs @($_.Exception.Message)) -Button 'OK' -Icon 'Error' | Out-Null
                 return
             }
@@ -356,7 +356,7 @@ function Show-RestoreBackupDialog {
                 }
 
                 $state.SelectedStartMenuBackupFilePath = $openDialog.FileName
-                Write-Host "Selected Start Menu backup file: $($state.SelectedStartMenuBackupFilePath)"
+                Write-Host (Get-ConsoleText "Selected Start Menu backup file: {0}" -FormatArgs @($($state.SelectedStartMenuBackupFilePath)))
                 & $refreshStartMenuUi
                 return
             }

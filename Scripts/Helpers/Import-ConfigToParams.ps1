@@ -43,7 +43,7 @@ function Get-ConfigDeploymentFlag {
 
     $flagValue = ConvertTo-ConfigBoolean $Lookup[$Name]
     if ($null -eq $flagValue) {
-        Write-Warning "Ignoring deployment setting '$Name' in the config file: expected true or false, found '$($Lookup[$Name])'."
+        Write-Warning (Get-ConsoleText "Ignoring deployment setting '{0}' in the config file: expected true or false, found '{1}'." -FormatArgs @($Name, $($Lookup[$Name])))
     }
     return $flagValue
 }

@@ -1,175 +1,296 @@
-# Win11Debloat
+# Win11Debloat 中文版
 
-[![GitHub Release](https://img.shields.io/github/v/release/Raphire/Win11Debloat?style=for-the-badge&label=Latest%20release)](https://github.com/Raphire/Win11Debloat/releases/latest)
-[![Join the Discussion](https://img.shields.io/badge/Join-the%20Discussion-2D9F2D?style=for-the-badge&logo=github&logoColor=white)](https://github.com/Raphire/Win11Debloat/discussions)
-[![Static Badge](https://img.shields.io/badge/Documentation-_?style=for-the-badge&logo=bookstack&color=grey)](https://github.com/Raphire/Win11Debloat/wiki/)
+[Win11Debloat](https://github.com/Raphire/Win11Debloat) 的**完整中文汉化版**。一个轻量、易用的 PowerShell 脚本，无需安装即可清理 Windows 预装应用、关闭遥测、移除烦人的界面元素。本仓库在上游基础上把图形界面、**命令行输出与日志**、启动提示全部译成中文，并额外提供**彻底移除 Microsoft Defender** 的能力。
 
- Win11Debloat is a lightweight, easy to use PowerShell script that allows you to quickly declutter and customize your Windows experience, no installation required! You can use it to remove pre-installed apps, disable telemetry, remove intrusive interface elements and much more. No need to painstakingly go through all the settings yourself or remove apps one by one. Win11Debloat makes the process quick and easy!
+> 本版基于上游 **2026.10.30** 版本整合。上游自 2026.10 起已自带简体中文界面语言包，本仓库在此之上补齐了命令行与日志的中文化，并保留了 Defender 模块。
 
-The script also includes many features that system administrators and power users will enjoy. Such as a powerful command-line interface, support for Windows Audit mode and the ability to make changes to other Windows users. You can also easily export & import your preferred settings, allowing you to quickly apply the same settings on all your systems. Please refer to our [wiki](https://github.com/Raphire/Win11Debloat/wiki) for more details.
+<img src="/Assets/Images/home.png" alt="Win11Debloat 首页" width="100%">
 
-![Win11Debloat Menu](/Assets/Images/menu.png)
+## 界面预览
 
-#### Did this script help you? Please consider buying me a cup of coffee to support my work
+#### 应用移除
+<img src="/Assets/Images/apps.png" alt="Win11Debloat 应用移除" width="100%">
 
-[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/M4M5C6UPC)
+162 个预装应用（含 HP / Dell / Lenovo 等 OEM 应用）全部配好中文名称与说明，按「推荐 / 可选 / 不推荐」三档标注移除风险，支持搜索、排序与快速预设。
 
-## Usage
+#### 系统优化
+<img src="/Assets/Images/tweaks.png" alt="Win11Debloat 系统优化" width="100%">
 
-> [!Warning]
-> Great care went into making sure this script does not unintentionally break any OS functionality, but use at your own risk! If you run into any issues, please report them [here](https://github.com/Raphire/Win11Debloat/issues).
+12 个分类共 96 项优化，名称、说明、悬停提示全部中文化，鼠标悬停即看详细解释。另有 9 项功能不归入任何分类、不在这个列表里展示（强制卸载 Edge、替换开始菜单布局、彻底移除 Defender 等）。
 
-### Quick method
+#### 部署设置
+<img src="/Assets/Images/deploy.png" alt="Win11Debloat 部署设置" width="100%">
 
-Download & run the script automatically via PowerShell.
+指定更改应用到哪个用户，可选创建注册表备份与系统还原点，应用前可先预览全部变更。
 
-1. Open PowerShell or Terminal.
-2. Copy and paste the command below into PowerShell:
+## 汉化范围
+
+| 部分 | 内容 | 数量 |
+|---|---|---|
+| 图形界面 | 主窗口（含 Windows Defender 模块页）、应用选择、应用进度、导入导出、还原备份、消息框、关于、气泡提示、Defender 移除确认、设置共 10 个窗体 | 385 条界面文案 |
+| 功能项 | 每个功能的名称 / 说明 / 执行中 / 撤销 / 撤销中文案，外加 UI 分组 | 105 项 + 10 分组 |
+| 应用列表 | 预装应用的显示名称与移除说明（含 HP / Dell / Lenovo 等 OEM 应用） | 162 条 |
+| 优化项分类 | 系统优化页 12 个分类的标题 | 12 条 |
+| 命令行与日志 | 菜单、选项、确认提示、错误提示、Defender 残留检查 | 351 条 |
+| 启动器 | `Run.bat` 与一键下载脚本按系统语言自动切换 | — |
+
+合计约 **1000 条**文案，全部中文化。
+
+## 系统要求
+
+- Windows 10 / 11
+- **Windows PowerShell 5.1**（系统自带）。不支持 PowerShell 7（pwsh）——应用移除与还原点依赖的模块在 pwsh 下不可用，脚本会直接提示退出。
+- 需要**管理员权限**。脚本会自动弹 UAC 请求提权，无需手动操作（UAC 弹窗是系统安全机制，无法跳过）。
+
+## 使用方法
+
+> **懒得看文档？** 把下面这段话原样丢给任意 AI（ChatGPT、Claude、DeepSeek、豆包都行），让它按你的机器情况带你做：
+>
+> ```
+> 帮我用 Win11Debloat 中文版清理这台 Windows 电脑，仓库：https://github.com/Swipa5fox/Win11Debloat-zh
+> 先看 README 告诉我它现在支持哪些功能，再问我三个问题：系统是 Win10 还是 Win11、想清掉哪些预装应用、
+> 要不要动 Windows Defender。然后给我一条能直接粘进 PowerShell 的命令，并说明这条命令会改什么、怎么还原。
+> ```
+>
+> 它会自己去读文档，你不用逐个参数对照。
+
+### 方法一：一键运行（推荐）
+
+打开 PowerShell 或终端，粘贴以下命令：
 
 ```PowerShell
-& ([scriptblock]::Create((irm "https://debloat.raphi.re/")))
+& ([scriptblock]::Create((irm "https://github.com/Swipa5fox/Win11Debloat-zh/releases/latest/download/Get.ps1")))
 ```
 
-3. Wait for the script to automatically download and launch Win11Debloat.
-4. Carefully read through and follow the on-screen instructions.
+脚本会自动下载到临时目录并启动，接受 UAC 提示即可。
 
-This method supports command-line parameters to customize the behaviour of the script. Please click [here](https://github.com/Raphire/Win11Debloat/wiki/Command%E2%80%90line-Interface#parameters) for more information.
+> **这条命令取的是「最新发布版」里的 `Get.ps1`，不是 `master` 分支上的开发代码。** 只有发布过的版本才会被这条命令执行，`master` 上未发布的提交不会因为有人推送就自动跑到用户机器上。
+>
+> 接着脚本会下载同一个 Release 的 `Win11Debloat.zip`，并用同批发布的 `SHA256SUMS` 校验；想拿开发中的代码，改用方法二下载后 `git pull`。
+>
+> 若 `github.com` 无法访问，改用方法二。
 
-### Traditional method
+**下载完整性怎么自查。** `SHA256SUMS` 与 ZIP 来自同一个 Release，它能防传输损坏，但防不了发布账号被接管。想确认 ZIP 确实由本仓库的发布流程构建，可以用 GitHub CLI 验证构建溯源：
 
-<details>
-  <summary>Manually download & run the script.</summary><br/>
+```PowerShell
+gh release download --repo Swipa5fox/Win11Debloat-zh --pattern Win11Debloat.zip --dir .
+gh attestation verify Win11Debloat.zip --repo Swipa5fox/Win11Debloat-zh
+```
 
-  1. [Download the latest version of the script](https://github.com/Raphire/Win11Debloat/releases/latest), and extract the .ZIP file to your desired location.
-  2. Navigate to the Win11Debloat folder
-  3. Double click the `Run.bat` file to start the script. NOTE: If the console window immediately closes and nothing happens, try the advanced method below.
-  4. Accept the Windows UAC prompt to run the script as administrator, this is required for the script to function.
-  5. Carefully read through and follow the on-screen instructions.
-</details>
+验证通过会输出该 ZIP 的构建来源（workflow 文件、提交 SHA、触发方式）。没有 `gh` 的话，方法二下载后对一下 `SHA256SUMS` 也能排除下载过程中的篡改。
 
-### Advanced method
+### 方法二：手动下载
 
-<details>
-  <summary>Manually download the script & run the script via PowerShell. Recommended for advanced users.</summary><br/>
+1. 到 [Releases](https://github.com/Swipa5fox/Win11Debloat-zh/releases/latest) 下载 `Win11Debloat.zip`（同页有 `SHA256SUMS` 可用于校验），解压到任意目录。
+2. 进入解压后的文件夹。
+3. 双击 **`Run.bat`** 启动，接受 UAC 提示。
+4. 按屏幕提示操作。
 
-  1. [Download the latest version of the script](https://github.com/Raphire/Win11Debloat/releases/latest), and extract the .ZIP file to your desired location.
-  2. Open PowerShell or Terminal as an administrator.
-  3. Temporarily enable PowerShell execution by entering the following command:
+### 方法三：命令行直接运行（进阶）
 
-  ```PowerShell
-  Set-ExecutionPolicy Bypass -Scope Process -Force
-  ```
+1. 同上，从 [Releases](https://github.com/Swipa5fox/Win11Debloat-zh/releases/latest) 下载 ZIP 包并解压。
+2. 以管理员身份打开 PowerShell，临时放行脚本执行：
 
-  4. In PowerShell, navigate to the directory where the files were extracted. Example: `cd c:\Win11Debloat`
-  5. Now run the script by entering the following command:
+   ```PowerShell
+   Set-ExecutionPolicy Bypass -Scope Process -Force
+   ```
 
-  ```PowerShell
-  .\Win11Debloat.ps1
-  ```
+3. 切换到解压目录并运行：
 
-  6. Carefully read through and follow the on-screen instructions.
+   ```PowerShell
+   .\Win11Debloat.ps1
+   ```
 
-  This method supports command-line parameters to customize the behaviour of the script. Please click [here](https://github.com/Raphire/Win11Debloat/wiki/Command%E2%80%90line-Interface#parameters) for more information.
-</details>
+支持命令行参数自定义行为。常用参数：
 
-## Features
+| 参数 | 作用 |
+|---|---|
+| `-RunDefaults` | 不显示菜单，直接套用推荐设置 |
+| `-RunDefaultsLite` | 同上，但跳过较难还原的更改 |
+| `-RunSavedSettings` | 按上次会话保存的设置重新执行 |
+| `-CLI` | 进入命令行模式，不启动图形界面 |
+| `-Silent` | 静默执行，全程无交互（需配合具体功能参数） |
+| `-RemoveApps` | 移除预装应用；不指定 `-Apps` 时使用默认列表 |
+| `-Apps <列表>` | 自定义要移除的应用 ID，逗号分隔 |
+| `-CreateRestorePoint` | 更改前先创建系统还原点 |
+| `-Language zh-CN` | 强制指定语言，不跟随系统 |
+| `-Sysprep` | 把更改写入 Windows 默认配置文件，新用户自动生效（进阶） |
+| `-RemoveWindowsDefender` | **彻底移除** Microsoft Defender（不可撤销，见下节） |
+| `-AcceptDefenderRemovalRisk` | 无人值守（`-Silent`）时确认移除 Defender 的风险 |
+| `-VerifyDefenderRemoval` | 只读检查 Defender 是否还有残留，不改动任何东西 |
 
-Below is an overview of the key features and functionality offered by Win11Debloat. You can visit the [the wiki](https://github.com/Raphire/Win11Debloat/wiki) for more details.
+每一项优化都有对应的开关（如 `-DisableChromeAI`、`-DisableDriverUpdates`），完整列表用 `.\Win11Debloat.ps1 -?` 查看，或直接看 `Config/Features.json` 的 `Features` 段。
 
-> [!Tip]
-> All of the changes made by Win11Debloat can easily be reverted and almost all of the apps can be reinstalled through the Microsoft Store. You can visit [the wiki](https://github.com/Raphire/Win11Debloat/wiki/Reverting-Changes) for more information on reverting changes.
+完整的 100 多个开关（每项优化都有对应参数）见 `Win11Debloat.ps1` 顶部的 `param` 块，一般用不到手动指定——界面里勾选即可。
 
-#### App Removal
+## 彻底移除 Microsoft Defender（危险操作）
 
-- Remove a wide variety of preinstalled apps. Click [here](https://github.com/Raphire/Win11Debloat/wiki/App-Removal) for more info.
+图形界面里有一个独立的「Windows Defender」页，命令行是 `-RemoveWindowsDefender`。**它删组件，不是关开关**：服务注册（`WinDefend`、`WdNisSvc`、`Sense`、`SecurityHealthService`，以及新版才有的 `MsSecCore` / `MsSecFlt` / `MsSecWfp` 平台驱动）、文件系统过滤与早期启动驱动（`WdFilter`、`WdNisDrv`、`WdBoot`）、策略与配置键、Shell/COM/WinRT 注册、`WebThreatDefense` 主机组、开机启动项、防火墙规则、计划任务、程序目录一并删除。
 
-#### Privacy & Suggested Content
+### 界面里的 Defender 模块
 
-- Disable telemetry, diagnostic data, activity history, app-launch tracking & targeted ads.
-- Disable tips, tricks, suggestions & ads across Windows, the lock screen and Microsoft Edge.
-- Disable Windows location services, app location access and Find My Device location tracking.
-- Hide Microsoft 365 ads on the Settings 'Home' page, or hide the 'Home' page entirely.
+主窗口从「系统优化」往后翻一页就是，分三块：
 
-#### AI Features
+| 区块 | 作用 |
+|---|---|
+| **当前状态** | 显示「已安装 / 仅剩残留 / 未安装」，以及篡改保护是否开启、有没有第三方杀毒软件。残留会给出具体条目数 |
+| **彻底移除** | 勾选后随「应用更改」一起执行；执行前仍会弹出确认窗口，要求输入 `REMOVE` |
+| **残留检查** | 只读检查，按服务、注册表、启动项、COM、驱动、目录、计划任务、防火墙、一致性分组列出还没清掉的东西，红色是阻塞项、黄色是残留项 |
 
-- Disable & remove Microsoft Copilot, Windows Recall and Click to Do.
-- Prevent AI service (WSAIFabricSvc) from starting automatically.
-- Disable AI Features in Edge, Chrome, Paint and Notepad.
+没有任何 Defender 组件时，「彻底移除」会自动置灰，避免点了也跑不动。
 
-#### System
+### 执行前必须知道
 
-- Restore the old Windows 10 style context menu.
-- Turn off Enhance Pointer Precision (mouse acceleration).
-- Disable the Sticky Keys keyboard shortcut.
-- Disable Storage Sense automatic disk cleanup.
-- Disable fast start-up to ensure a full shutdown.
-- Disable BitLocker automatic device encryption.
-- Disable network connectivity during Modern Standby to reduce battery drain.
+| 项 | 说明 |
+|---|---|
+| **不可撤销** | 本工具没有反向操作。恢复只能靠就地升级（保留文件和程序的 Windows 安装）或全新安装 |
+| **功能更新会装回来** | Windows 大版本更新会重新安装 Defender，届时需要再执行一次 |
+| **篡改保护必须先关** | 微软会拦截对 Defender 的注册表/服务改动。请在「Windows 安全中心 → 病毒和威胁防护 → 管理设置」里关掉篡改保护，脚本无法代劳 |
+| **没装第三方杀软等于裸奔** | 脚本会检测 Windows 安全中心注册的杀毒产品；一个都没有时会强警告，并仍要求输入确认词 |
+| **需要重启** | 删除驱动和目录的收尾工作要重启后才干净 |
 
-#### Windows Update
+### 确认机制
 
-- Prevent Windows from getting updates as soon as they're available.
-- Prevent automatic restarts after updates while signed in.
-- Disable driver updates through Windows Update.
-- Disable sharing of downloaded updates with other PCs, also known as Delivery Optimization.
-- Prevent Windows from auto-installing device companion apps, like LG Monitor App, Alienware Command Center and more.
+- 图形界面：弹出专门窗口列清后果，**必须手动输入 `REMOVE`** 才能继续，点错会把输入框标红
+- 命令行：同样要求输入 `REMOVE`，直接回车即跳过
+- 静默模式（`-Silent`）：不会弹任何提示，**必须同时传 `-AcceptDefenderRemovalRisk`**，否则这个功能会被跳过而不是悄悄执行
 
-#### Appearance
+### 脚本会先做的保护措施
 
-- Enable dark mode for system and apps.
-- Disable transparency, animations and visual effects.
-- Hide the 'Learn about this picture' shortcut for desktop spotlight, or disable the Windows spotlight background option entirely.
+1. 把 `WinDefend` / `WdFilter` / `WdNisDrv` / `WdBoot` 服务键与 Defender 配置/策略键导出到 `Backups\DefenderRemoval-<时间戳>\*.reg`
+2. 尝试创建系统还原点（不保证成功，失败只警告不中止）
+3. 按「停服务 → 删计划任务 → 删服务注册 → 删驱动文件 → 删配置与外壳注册 → 删开机启动项 → 删防火墙规则 → 删目录」的顺序执行，避免留下指向已删文件的开机驱动
+4. 逐项报告没删掉的条目。Defender 的配置键和 `SecurityHealthService` 服务键的属主是 TrustedInstaller，**SYSTEM 权限也删不掉**，脚本会先把属主改成 Administrators、授予完全控制再删；这之后仍失败的才走 SYSTEM 权限的一次性计划任务重试
 
-#### Start Menu & Search
+### 移除后自查
 
-- Customize the start menu by removing pinned apps, hiding recommendations, and customizing the 'All Apps' section.
-- Disable the Phone Link mobile devices integration in the start menu.
-- Disable Bing web search & Copilot integration and Microsoft Store app suggestions in Windows search.
+重启后可以跑一次只读检查，它不会改动任何东西：
 
-#### Taskbar
+```PowerShell
+.\Win11Debloat.ps1 -VerifyDefenderRemoval
+```
 
-- Change taskbar alignment.
-- Customize or hide taskbar buttons like the search bar, taskview and more.
-- Disable widgets on the taskbar & lock screen.
-- Enable the 'End Task' option in the taskbar right click menu to quickly force-close apps.
-- Enable the 'Last Active Click' behavior in the taskbar app area. This allows you to repeatedly click on an application's icon in the taskbar to switch focus between the open windows of that application.
-- Customize how app buttons are shown on the taskbar.
+输出按「服务与驱动注册 / 注册表项 / 开机启动项 / COM 组件注册 / 驱动文件 / 程序目录 / 计划任务 / 防火墙规则 / 一致性检查」分组，末尾给出「正常 / 警告 / 失败」计数；有阻塞项时退出码为 1，方便写进自动化脚本。图形界面里的「残留检查」块是同一个数据源。
 
-#### File Explorer
+### 删到一半中断了怎么办
 
-- Change the default location that File Explorer opens to.
-- Show file extensions for known file types.
-- Show hidden files, folders and drives.
-- Hide the Home, Gallery or OneDrive section from the File Explorer navigation pane.
-- Hide duplicate removable drive entries from the File Explorer navigation pane, so only the entry under 'This PC' remains.
-- Add all common folders (Desktop, Downloads, etc.) back to 'This PC' in File Explorer.
-- Change drive letter position or visibility in File Explorer.
+再跑一次就行。脚本会判断「主服务是否还在」和「还有没有残留」两件事：
 
-#### Multi-tasking
+- 主服务已不在但仍有残留：进入**残留清理模式**，只处理剩下的条目，不会因为「Defender 不存在」而拒绝
+- 已经完全干净：明确报告「系统中不存在 Microsoft Defender 杀毒组件」并跳过，不会空转
 
-- Disable window snapping.
-- Disable Snap Assist and Snap Layout suggestions when dragging or snapping windows.
-- Change whether tabs are shown when snapping windows or pressing Alt+Tab.
+服务管理器可能在重启前一直显示一个 `StartType` 为空的 `SecurityHealthService` 残影，那是内存缓存，不是没删干净。
 
-#### Optional Windows Features
+### 命令行示例
 
-- Enable Windows Sandbox, a lightweight desktop environment for safely running applications in isolation.
-- Enable Windows Subsystem for Linux which allows you to run a Linux environment directly on Windows.
+```PowerShell
+.\Win11Debloat.ps1 -RemoveWindowsDefender
+# 无人值守（机器重装脚本里用），跳过交互：
+.\Win11Debloat.ps1 -RemoveWindowsDefender -Silent -AcceptDefenderRemovalRisk
+```
 
-#### Other
+想先看它到底会删什么、不实际执行：
 
-- Disable Xbox Game Bar integration & game/screen recording. This also disables `ms-gamingoverlay`/`ms-gamebar` popups if you uninstall the Xbox Game Bar.
-- Disable bloat in Brave browser (AI, Crypto, News, etc.)
+```PowerShell
+.\Win11Debloat.ps1 -RemoveWindowsDefender -WhatIf
+```
 
-#### Advanced Features
+> 命令行模式下脚本跑完会停在「按任意键退出」，这是一层防窗口闪退的保护。写进自动化脚本时记得加 `-Silent`，否则会一直等你按键。
 
-- Ability to [apply changes to a different user](https://github.com/Raphire/Win11Debloat/wiki/Advanced-Features#running-as-another-user), instead of the currently logged in user.
-- [Sysprep mode](https://github.com/Raphire/Win11Debloat/wiki/Advanced-Features#sysprep-mode) to apply changes to the Windows Default user profile. Which ensures, all new users will have the changes automatically applied to them.
+> 这一项是上游没有的，属于本仓库新增功能。上游只做「优化项」，不碰 Defender 的卸载；微软也不支持客户端系统卸载 Defender，所以出问题别指望官方支持。
 
-## Contributing
+## 语言与主题
 
-We welcome contributions of all kinds! Please see our [Contributing Guidelines](https://github.com/Raphire/Win11Debloat/blob/master/.github/CONTRIBUTING.md) for detailed instructions on how to get started and best practices for contributing.
+- **默认自动跟随系统**：系统界面语言为中文（`zh-*`）时自动加载中文，其他语言回退英文。
+- **主窗口可随时切换**：右上角「设置」里改主题（自动 / 浅色 / 深色）与语言，改完立即生效，选择会记在 `%LOCALAPPDATA%\Win11Debloat\Preferences.json`。
+- **强制指定语言**：加 `-Language` 参数，例如 `.\Win11Debloat.ps1 -Language zh-CN`，优先级高于已保存的偏好。
+- 界面支持上游提供的 13 套语言包（德 / 英 / 西 / 法 / 意 / 日 / 韩 / 荷 / 葡 / 俄 / 土 / 繁中 / 简中）。
+- **命令行与日志的中文化只有中文和英文两套**：其余语言下控制台会回退英文原文，界面仍是当地语言。
+- `Run.bat` 读注册表的 `LocaleName` 判断中文区域，PowerShell 内部用的是系统界面语言（`CurrentUICulture`）。绝大多数机器两者一致；若你把界面语言和区域格式设成不同（如英文界面 + 中文区域），两处提示可能语言不同，属正常现象。
+- 语言文件位于 `Config/Languages/<语言代码>/`，想改措辞直接编辑对应 JSON 即可，无需动脚本。新增语言时缺键会自动回退英文，不会报错。
 
-## License
+## 与上游的差异
 
-Win11Debloat is licensed under the MIT license. See the LICENSE file for more information.
+上游自 2026.10 起已自带简体中文界面语言包，本仓库的增量集中在「界面之外」和「上游不做的功能」：
+
+| 改动 | 说明 |
+|---|---|
+| 命令行与日志中文包 | 上游的 `Console.json` 机制没有任何数据文件，控制台与日志全是英文。本仓库补了 `zh-CN/Console.json`（351 条）与 `en-US/Console.json` 基线，按「英文原文 → 译文」映射，缺译回退原文 |
+| 界面措辞校订 | 在上游中文语言包基础上补了 Defender 与设置窗口相关键，并按中文表达习惯重写了约 160 条直译文案；界面文案合计 385 条 |
+| 新增「彻底移除 Microsoft Defender」 | 上游没有的功能：删除 Defender 的服务注册（含 MsSec* 平台驱动）、过滤与早期启动驱动、策略与配置键、Shell/COM/WinRT 注册、WebThreatDefense 主机组、开机启动项、防火墙规则、任务与目录，不可撤销。入口是主窗口独立的「Windows Defender」页与 `-RemoveWindowsDefender`，带 `REMOVE` 输入确认；另有只读的 `-VerifyDefenderRemoval` 自查入口 |
+| 非管理员自动提权 | 不再询问 `y/n`，直接请求 UAC（上游需手动确认） |
+| 一键脚本下载本仓库发布版 | `Scripts/Get.ps1` 默认取本仓库最新 Release 的 `Win11Debloat.zip`，并用同批发布的 `SHA256SUMS` 校验；`-Dev` 仍指向上游开发分支 |
+| `Run.bat` 中英文分流 | 按 `LocaleName` 判断，中文系统显示中文提示 |
+| 反馈入口指向本仓库 | `Run.bat` 的 issue 提示、主窗口「反馈问题」菜单、应用失败时的上报按钮，均指向本仓库 issues（上游 Wiki 链接保留，因为说明文档仍在上游） |
+| 彻底移除不写入预设 | `LastUsedSettings.json` 会排除 Defender 移除，「使用上次设置」不会重放这个不可逆操作 |
+
+## 同步上游更新
+
+上游与本仓库没有共同祖先（历史已重写），所以不要 `git merge`，按「以上游为新基线、重放本地增量」的方式同步：
+
+```PowerShell
+git remote add upstream https://github.com/Raphire/Win11Debloat.git
+git fetch upstream --no-tags
+git checkout -b sync/upstream-<日期> upstream/master
+```
+
+`--no-tags` 是必要的：本仓库只保留自己的版本标签（`v0.1.x`），加上它上游那几十个日期标签才不会被顺手拉进来。
+
+分支建好后按三类处理：
+
+1. **本仓库独有的文件**直接取回：`git checkout master -- Scripts/Features/Remove-WindowsDefender.ps1` 等 Defender 相关文件、`Config/Languages/*/Console.json`、`Assets/Images/*.png`
+2. **两边都改过的文件**逐个重放：`git diff <旧基线> master -- <文件> | git apply -3`，冲突处手工合
+3. **语言包**以上游为准，只把 `Console.json` 与 Defender 相关键补回去；补完跑一次覆盖检查，确认没有漏译的键
+
+改完跑 `.\Scripts\Run-Tests.ps1`，全绿再提交。
+
+## Q&A
+
+**Q：双击 `Win11Debloat.ps1`，弹出来一个记事本，是脚本坏了吗？**
+
+A：没坏。Windows 默认把 `.ps1` 交给编辑器打开，不是给你运行的。双击 **`Run.bat`** 就对了，或者按方法三从 PowerShell 里跑。
+
+**Q：界面或者控制台出现几个乱码字，怎么处理？**
+
+A：八成是你手动改过 `Config/Languages/` 里的 JSON。这些文件必须是 **UTF-8 无 BOM**，Windows 记事本有时候会自作多情加上 BOM。用 VS Code 打开，右下角编码改成「UTF-8」再存一次即可。
+
+**Q：改完后悔了，能还原吗？**
+
+A：能。绝大多数改动都有反向开关，预装应用也能从 Microsoft Store 装回来，具体步骤看[上游 Wiki 的还原说明](https://github.com/Raphire/Win11Debloat/wiki/Reverting-Changes)。**唯一的例外是「彻底移除 Defender」**——那个删完就回不来了，只能就地升级或重装系统。
+
+**Q：我装的是 PowerShell 7，能用吗？**
+
+A：不能。`pwsh` 里 Appx 模块直接报错，应用移除会静默失败，所以脚本检测到 pwsh 会主动退出。用开始菜单里那个蓝色的 Windows PowerShell 5.1。
+
+**Q：Defender 删掉之后，Windows 更新会偷偷装回来吗？**
+
+A：**功能更新（大版本升级）会**，累积更新一般不会。所以每次大版本更新后跑一次 `.\Win11Debloat.ps1 -VerifyDefenderRemoval` 看一眼，装回来了就再执行一次移除。
+
+**Q：Defender 删除后，安全中心一直红着报警怎么办？**
+
+A：装一个第三方杀软（Kaspersky、Bitdefender、火绒都行），安全中心会把它认成主防，红条自己就没了。要是一个杀软都不想装，那就是主动选择裸奔——这个功能本来就只写给「清楚自己在干什么」的人。
+
+**Q：这脚本会收集我的数据吗？**
+
+A：不会。整个东西就是本地跑的 PowerShell + WPF，没有遥测、没有回传。联网只发生在两处：一键脚本下载发布包、以及通过 winget 读取应用列表。
+
+**Q：界面中文不是上游自带的吗？那这个仓库还有什么意义？**
+
+A：界面中文确实从 2026.10 起上游就有了。但上游只做了界面，**命令行和日志到现在还是英文**，那个 `Console.json` 机制他们有、数据一条没写。这个仓库补的就是这一块，另外还多做了一个上游根本没有的 Defender 移除模块。逐条对照在上面「与上游的差异」。
+
+## 致谢
+
+**地基是上游的。** 清理规则、注册表项、应用清单、界面骨架，都是 [@Raphire](https://github.com/Raphire) 的 [Win11Debloat](https://github.com/Raphire/Win11Debloat) 和它[所有贡献者](https://github.com/Raphire/Win11Debloat/graphs/contributors)几年攒下来的。没有那几百个提交，这里一个字也写不出来。
+
+**但也不是只做了翻译。** 这个仓库自己加的东西：
+
+- **彻底移除 Microsoft Defender**——上游只做「优化项」，从来不碰卸载。从服务注册、`MsSec*` 平台驱动、过滤与早期启动驱动，到 Shell / COM / WinRT 注册、`WebThreatDefense` 主机组、防火墙规则、计划任务、程序目录，加上残留检测和只读自查 `-VerifyDefenderRemoval`，这一整块是从零写的，连「删到一半中断了怎么补刀」都是自己踩出来的
+- **命令行与日志中文包**（351 条）——上游有 `Console.json` 的机制，却一条数据都没写，控制台至今是英文
+- **界面文案校订**——上游的中文包直译痕迹挺重，这里按中文表达习惯重写了约 160 条
+- **一键脚本、自动提权、反馈入口**这些本地化适配
+
+上游是地基，Defender 模块和整套中文输出是这上面加的楼层。
+
+用得顺手的话，Star 给[上游仓库](https://github.com/Raphire/Win11Debloat)——真正干活的是他们；觉得中文和 Defender 这块有用，也欢迎给[这个仓库](https://github.com/Swipa5fox/Win11Debloat-zh)点一个。
+
+本项目中文化与少量适配遵循 [MIT 许可证](./LICENSE)，与上游一致。

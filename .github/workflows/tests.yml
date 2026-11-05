@@ -39,6 +39,6 @@ jobs:
         shell: powershell
         run: |
           $ErrorActionPreference = 'Stop'
-          Install-Module -Name PSScriptAnalyzer -Scope CurrentUser -Force -Confirm:$false
-          Import-Module PSScriptAnalyzer
+          Install-Module -Name PSScriptAnalyzer -RequiredVersion 1.25.0 -Scope CurrentUser -Force -Confirm:$false
+          Import-Module PSScriptAnalyzer -RequiredVersion 1.25.0
           Invoke-ScriptAnalyzer -Path . -Recurse -Severity Error -EnableExit

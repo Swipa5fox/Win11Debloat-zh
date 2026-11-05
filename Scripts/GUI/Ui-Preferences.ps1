@@ -23,7 +23,7 @@ function Get-UiPreferences {
                 $preferences.Language = $saved.Language
             }
         }
-        catch { Write-Warning "Unable to read UI preferences: $($_.Exception.Message)" }
+        catch { Write-Warning (Get-ConsoleText "Unable to read UI preferences: {0}" -FormatArgs @($($_.Exception.Message))) }
     }
     return $preferences
 }

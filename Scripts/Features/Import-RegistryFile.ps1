@@ -18,8 +18,8 @@ function Import-RegistryFile {
         $regFilePath = Get-RegistryFilePathForFeature -RegistryKey $path
 
         if (-not (Test-Path $regFilePath)) {
-            $errorMessage = "Unable to find registry file: $path ($regFilePath)"
-            Write-Host "Error: $errorMessage" -ForegroundColor Red
+            $errorMessage = Get-ConsoleText "Unable to find registry file: {0} ({1})" -FormatArgs @($path, $regFilePath)
+            Write-Host (Get-ConsoleText "Error: {0}" -FormatArgs @($errorMessage)) -ForegroundColor Red
             return $false
         }
 
@@ -38,7 +38,7 @@ function Import-RegistryFile {
             if ($usePowerShellFallbackOnly) {
                 $fallbackSucceeded = Invoke-RegistryOperationsFromRegFile -RegFilePath $targetRegFilePath
                 if ($fallbackSucceeded) {
-                    Write-Host "The operation completed successfully via PowerShell registry writer."
+                    Write-Host (Get-ConsoleText "The operation completed successfully via PowerShell registry writer.")
                 }
                 return $fallbackSucceeded
             }
@@ -92,10 +92,10 @@ function Import-RegistryFile {
 
             if (-not $hasSuccess) {
                 $details = if ($regResult.Error) { $regResult.Error } else { "Exit code: $($regResult.ExitCode)" }
-                Write-Warning "reg import failed for '$path'. Falling back to PowerShell registry writer. Details: $details"
+                Write-Warning (Get-ConsoleText "reg import failed for '{0}'. Falling back to PowerShell registry writer. Details: {1}" -FormatArgs @($path, $details))
                 $fallbackSucceeded = Invoke-RegistryOperationsFromRegFile -RegFilePath $targetRegFilePath
                 if ($fallbackSucceeded) {
-                    Write-Host "The operation completed successfully via PowerShell registry writer."
+                    Write-Host (Get-ConsoleText "The operation completed successfully via PowerShell registry writer.")
                 }
                 return $fallbackSucceeded
             }

@@ -39,7 +39,7 @@ function Get-TelemetryScheduledTasks {
     System.Boolean. $true when every task is disabled, absent, already disabled, or previewed; otherwise $false.
 #>
 function Disable-TelemetryScheduledTasks {
-    Write-Host "> Disabling telemetry scheduled tasks..."
+    Write-Host (Get-ConsoleText "> Disabling telemetry scheduled tasks...")
     $tasks = Get-TelemetryScheduledTasks
 
     $success = $true
@@ -47,7 +47,7 @@ function Disable-TelemetryScheduledTasks {
         if ($script:CancelRequested) { return $false }
 
         if ($script:Params.ContainsKey("WhatIf")) {
-            Write-Host "[WhatIf] Disable Scheduled Task: $($task.Path)$($task.Name)" -ForegroundColor Cyan
+            Write-Host (Get-ConsoleText "[WhatIf] Disable Scheduled Task: {0}{1}" -FormatArgs @($($task.Path), $($task.Name))) -ForegroundColor Cyan
             continue
         }
 
@@ -80,17 +80,17 @@ function Disable-TelemetryScheduledTasks {
             } -ArgumentList @($task.Path, $task.Name)
         }
         catch {
-            Write-Warning "Failed to disable Scheduled Task: $($task.Path)$($task.Name) - $($_.Exception.Message)"
+            Write-Warning (Get-ConsoleText "Failed to disable Scheduled Task: {0}{1} - {2}" -FormatArgs @($($task.Path), $($task.Name), $($_.Exception.Message)))
             $success = $false
             continue
         }
 
         switch ($result.Status) {
-            'Disabled'        { Write-Host "Disabled Scheduled Task: $($task.Path)$($task.Name)" }
-            'AlreadyDisabled' { Write-Host "Scheduled Task $($task.Path)$($task.Name) is already disabled" -ForegroundColor DarkGray }
-            'NotFound'        { Write-Host "Scheduled Task $($task.Path)$($task.Name) not found" -ForegroundColor DarkGray }
-            'Error'           { Write-Host "Failed to disable Scheduled Task: $($task.Path)$($task.Name) - $($result.Error)" -ForegroundColor Yellow; $success = $false }
-            default           { Write-Warning "Unable to determine the result of disabling Scheduled Task: $($task.Path)$($task.Name)."; $success = $false }
+            'Disabled'        { Write-Host (Get-ConsoleText "Disabled Scheduled Task: {0}{1}" -FormatArgs @($($task.Path), $($task.Name))) }
+            'AlreadyDisabled' { Write-Host (Get-ConsoleText "Scheduled Task {0}{1} is already disabled" -FormatArgs @($($task.Path), $($task.Name))) -ForegroundColor DarkGray }
+            'NotFound'        { Write-Host (Get-ConsoleText "Scheduled Task {0}{1} not found" -FormatArgs @($($task.Path), $($task.Name))) -ForegroundColor DarkGray }
+            'Error'           { Write-Host (Get-ConsoleText "Failed to disable Scheduled Task: {0}{1} - {2}" -FormatArgs @($($task.Path), $($task.Name), $($result.Error))) -ForegroundColor Yellow; $success = $false }
+            default           { Write-Warning (Get-ConsoleText "Unable to determine the result of disabling Scheduled Task: {0}{1}." -FormatArgs @($($task.Path), $($task.Name))); $success = $false }
         }
     }
 
@@ -113,7 +113,7 @@ function Disable-TelemetryScheduledTasks {
     System.Boolean. $true when every task is enabled, absent, already enabled, or previewed; otherwise $false.
 #>
 function Enable-TelemetryScheduledTasks {
-    Write-Host "> Enabling telemetry scheduled tasks..."
+    Write-Host (Get-ConsoleText "> Enabling telemetry scheduled tasks...")
     $tasks = Get-TelemetryScheduledTasks
 
     $success = $true
@@ -121,7 +121,7 @@ function Enable-TelemetryScheduledTasks {
         if ($script:CancelRequested) { return $false }
 
         if ($script:Params.ContainsKey("WhatIf")) {
-            Write-Host "[WhatIf] Enable Scheduled Task: $($task.Path)$($task.Name)" -ForegroundColor Cyan
+            Write-Host (Get-ConsoleText "[WhatIf] Enable Scheduled Task: {0}{1}" -FormatArgs @($($task.Path), $($task.Name))) -ForegroundColor Cyan
             continue
         }
 
@@ -154,17 +154,17 @@ function Enable-TelemetryScheduledTasks {
             } -ArgumentList @($task.Path, $task.Name)
         }
         catch {
-            Write-Warning "Failed to enable Scheduled Task: $($task.Path)$($task.Name) - $($_.Exception.Message)"
+            Write-Warning (Get-ConsoleText "Failed to enable Scheduled Task: {0}{1} - {2}" -FormatArgs @($($task.Path), $($task.Name), $($_.Exception.Message)))
             $success = $false
             continue
         }
 
         switch ($result.Status) {
-            'Enabled'        { Write-Host "Enabled Scheduled Task: $($task.Path)$($task.Name)" }
-            'AlreadyEnabled' { Write-Host "Scheduled Task $($task.Path)$($task.Name) is already enabled." -ForegroundColor DarkGray }
-            'NotFound'       { Write-Host "Scheduled Task $($task.Path)$($task.Name) not found." -ForegroundColor DarkGray }
-            'Error'          { Write-Host "Failed to enable Scheduled Task: $($task.Path)$($task.Name) - $($result.Error)" -ForegroundColor Yellow; $success = $false }
-            default          { Write-Warning "Unable to determine the result of enabling Scheduled Task: $($task.Path)$($task.Name)."; $success = $false }
+            'Enabled'        { Write-Host (Get-ConsoleText "Enabled Scheduled Task: {0}{1}" -FormatArgs @($($task.Path), $($task.Name))) }
+            'AlreadyEnabled' { Write-Host (Get-ConsoleText "Scheduled Task {0}{1} is already enabled." -FormatArgs @($($task.Path), $($task.Name))) -ForegroundColor DarkGray }
+            'NotFound'       { Write-Host (Get-ConsoleText "Scheduled Task {0}{1} not found." -FormatArgs @($($task.Path), $($task.Name))) -ForegroundColor DarkGray }
+            'Error'          { Write-Host (Get-ConsoleText "Failed to enable Scheduled Task: {0}{1} - {2}" -FormatArgs @($($task.Path), $($task.Name), $($result.Error))) -ForegroundColor Yellow; $success = $false }
+            default          { Write-Warning (Get-ConsoleText "Unable to determine the result of enabling Scheduled Task: {0}{1}." -FormatArgs @($($task.Path), $($task.Name))); $success = $false }
         }
     }
 
