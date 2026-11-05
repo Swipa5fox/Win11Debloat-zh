@@ -1,0 +1,15 @@
+version: 2
+updates:
+  # 这个仓库没有 nuget / npm / pip 之类的包清单，唯一会过期的是 workflow 里引用的 action。
+  # 仓库已开启「Require actions to be pinned to a full-length commit SHA」，所以 Dependabot
+  # 提交的 PR 会自动把 tag 换成新的完整 SHA，正好配套。
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    commit-message:
+      prefix: "chore"
+    groups:
+      github-actions:
+        patterns:
+          - "*"

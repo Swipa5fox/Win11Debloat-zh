@@ -1,0 +1,1039 @@
+﻿{
+  "Version": "1.1",
+  "Apps": [
+    {
+      "AppId": "Clipchamp.Clipchamp",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.3DBuilder",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.549981C3F5F10",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.BingFinance",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.BingFoodAndDrink",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.BingHealthAndFitness",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.BingNews",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.BingSports",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.BingTranslator",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.BingTravel",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.BingWeather",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "XP9CXNGPPJ97XX",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "WinGet"
+    },
+    {
+      "AppId": "Microsoft.Windows.AIHub",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": ["Microsoft.PCManager", "Microsoft.MicrosoftPCManager"],
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Getstarted",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Messaging",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Microsoft3DViewer",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.MicrosoftJournal",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.MicrosoftOfficeHub",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.MicrosoftPowerBIForWindows",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.MicrosoftSolitaireCollection",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.MicrosoftStickyNotes",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.MixedReality.Portal",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.NetworkSpeedTest",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Office.OneNote",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Office.Sway",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.OneConnect",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Print3D",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.PowerAutomateDesktop",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.SkypeApp",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Todos",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Windows.DevHome",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.WindowsAlarms",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.WindowsFeedbackHub",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.WindowsMaps",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.WindowsSoundRecorder",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.XboxApp",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.ZuneVideo",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "MicrosoftCorporationII.MicrosoftFamily",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "MicrosoftCorporationII.QuickAssist",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "MicrosoftTeams",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "MSTeams",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "ACGMediaPlayer",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "ActiproSoftwareLLC",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AdobeSystemsIncorporated.AdobePhotoshopExpress",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Amazon.com.Amazon",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AmazonVideo.PrimeVideo",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Asphalt8Airborne",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AutodeskSketchBook",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "CaesarsSlotsFreeCasino",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "COOKINGFEVER",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "CyberLinkMediaSuiteEssentials",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "DisneyMagicKingdoms",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Disney.37853FC22B2CE",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "DrawboardPDF",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Duolingo-LearnLanguagesforFree",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "FACEBOOK.FACEBOOK",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "FarmVille2CountryEscape",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Flipboard",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "HiddenCity",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "HULULLC.HULUPLUS",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "iHeartRadio",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Facebook.Instagram",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "king.com.BubbleWitch3Saga",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "king.com.CandyCrushSaga",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "king.com.CandyCrushSodaSaga",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "LinkedInforWindows",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "MarchofEmpires",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "4DF9E0F8.Netflix",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "NYTCrossword",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "OneCalendar",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "PandoraMediaInc",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "PhototasticCollage",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "PicsArt-PhotoStudio",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "PolarrPhotoEditorAcademicEdition",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "flaregamesGmbH.RoyalRevolt",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Sidia.LiveWallpaper",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SlingTV",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SpotifyAB.SpotifyMusic",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "BytedancePte.Ltd.TikTok",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "TuneInRadio",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "WinZipUniversal",
+      "SelectedByDefault": true,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.BingSearch",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": ["Microsoft.Edge", "XPFFTQ037JWMHS"],
+      "SelectedByDefault": false,
+      "Recommendation": "unsafe",
+      "RemovalMethod": "WinGet"
+    },
+    {
+      "AppId": "Microsoft.GamingApp",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.GetHelp",
+      "SelectedByDefault": false,
+      "Recommendation": "unsafe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.M365Companions",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.MSPaint",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.OneDrive",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "WinGet"
+    },
+    {
+      "AppId": "Microsoft.OutlookForWindows",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Paint",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.People",
+      "SelectedByDefault": false,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "MicrosoftCorporationII.Windows365",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.RemoteDesktop",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.ScreenSketch",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.StartExperiencesApp",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.SurfaceHub",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Whiteboard",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Windows.Photos",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.WindowsCalculator",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.WindowsCamera",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.windowscommunicationsapps",
+      "SelectedByDefault": false,
+      "Recommendation": "safe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.WindowsNotepad",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.WindowsStore",
+      "SelectedByDefault": false,
+      "Recommendation": "unsafe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.WindowsTerminal",
+      "SelectedByDefault": false,
+      "Recommendation": "unsafe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.Xbox.TCUI",
+      "SelectedByDefault": false,
+      "Recommendation": "unsafe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.XboxGameOverlay",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.XboxGamingOverlay",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.XboxIdentityProvider",
+      "SelectedByDefault": false,
+      "Recommendation": "unsafe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.XboxSpeechToTextOverlay",
+      "SelectedByDefault": false,
+      "Recommendation": "unsafe",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.YourPhone",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.ZuneMusic",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "MicrosoftWindows.CrossDevice",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "MicrosoftWindows.Client.WebExperience",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "Microsoft.WidgetsPlatformRuntime",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.OMENCommandCenter",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AcerIncorporated.AcerCareCenterS",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "B9ECED6F.ASUSPCAssistant",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "B9ECED6F.Glidex",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCoLtd.SamsungQuickShare",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "9426MICRO-STARINTERNATION.MSICenter",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCO.LTD.PCGallery",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCoLtd.SamsungFlux",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCoLtd.SamsungNotes",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "B9ECED6F.ScreenPadMaster",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCO.LTD.SamsungStudio",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCO.LTD.SamsungScreenRecording",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCO.LTD.Bixby",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCO.LTD.SamsungWelcome",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCO.LTD.SmartThingsWindows",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCoLtd.MultiControl",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCoLtd.SecondScreen",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "SAMSUNGELECTRONICSCO.LTD.PENUP",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "9426MICRO-STARINTERNATION.BusinessCenter",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AcerIncorporated.AcerRegistration",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "E0469640.SmartAppearance",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "LGElectronics.LGMonitorApp",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPAIExperienceCenter",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPConnectedMusic",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPConnectedPhotopoweredbySnapfish",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPDesktopSupportUtilities",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPEasyClean",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPFileViewer",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPJumpStarts",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPPCHardwareDiagnosticsWindows",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPPowerManager",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPPrinterControl",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPPrivacySettings",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPQuickDrop",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPQuickTouch",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPRegistration",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPSupportAssistant",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPSureShieldAI",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPSystemInformation",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPWelcome",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.HPWorkWell",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "AD2F1837.myHP",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "E046963F.LenovoCompanion",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "LenovoCompanyLimited.LenovoVantageService",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "DellInc.DellSupportAssistforPCs",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "DellInc.DellDigitalDelivery",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    },
+    {
+      "AppId": "DellInc.DellMobileConnect",
+      "SelectedByDefault": false,
+      "Recommendation": "optional",
+      "RemovalMethod": "Appx"
+    }
+  ],
+  "Presets": [
+    {
+      "Name": "Xbox gaming apps",
+      "AppIds": [
+        "Microsoft.GamingApp",
+        "Microsoft.XboxGameOverlay",
+        "Microsoft.XboxGamingOverlay"
+      ]
+    },
+    {
+      "Name": "OEM software (Acer, ASUS, Dell, HP, Lenovo, LG, MSI, Samsung)",
+      "AppIds": [
+        "SAMSUNGELECTRONICSCoLtd.MultiControl",
+        "SAMSUNGELECTRONICSCoLtd.SecondScreen",
+        "SAMSUNGELECTRONICSCO.LTD.PENUP",
+        "9426MICRO-STARINTERNATION.BusinessCenter",
+        "AcerIncorporated.AcerRegistration",
+        "E0469640.SmartAppearance",
+        "SAMSUNGELECTRONICSCO.LTD.SamsungStudio",
+        "SAMSUNGELECTRONICSCO.LTD.SamsungScreenRecording",
+        "SAMSUNGELECTRONICSCO.LTD.Bixby",
+        "SAMSUNGELECTRONICSCO.LTD.SamsungWelcome",
+        "SAMSUNGELECTRONICSCO.LTD.SmartThingsWindows",
+        "SAMSUNGELECTRONICSCO.LTD.PCGallery",
+        "SAMSUNGELECTRONICSCoLtd.SamsungFlux",
+        "SAMSUNGELECTRONICSCoLtd.SamsungNotes",
+        "B9ECED6F.ScreenPadMaster",
+        "B9ECED6F.Glidex",
+        "SAMSUNGELECTRONICSCoLtd.SamsungQuickShare",
+        "9426MICRO-STARINTERNATION.MSICenter",
+        "AD2F1837.OMENCommandCenter",
+        "AcerIncorporated.AcerCareCenterS",
+        "B9ECED6F.ASUSPCAssistant",
+        "AD2F1837.HPAIExperienceCenter",
+        "AD2F1837.HPConnectedMusic",
+        "AD2F1837.HPConnectedPhotopoweredbySnapfish",
+        "AD2F1837.HPDesktopSupportUtilities",
+        "AD2F1837.HPEasyClean",
+        "AD2F1837.HPFileViewer",
+        "AD2F1837.HPJumpStarts",
+        "AD2F1837.HPPCHardwareDiagnosticsWindows",
+        "AD2F1837.HPPowerManager",
+        "AD2F1837.HPPrinterControl",
+        "AD2F1837.HPPrivacySettings",
+        "AD2F1837.HPQuickDrop",
+        "AD2F1837.HPQuickTouch",
+        "AD2F1837.HPRegistration",
+        "AD2F1837.HPSupportAssistant",
+        "AD2F1837.HPSureShieldAI",
+        "AD2F1837.HPSystemInformation",
+        "AD2F1837.HPWelcome",
+        "AD2F1837.HPWorkWell",
+        "AD2F1837.myHP",
+        "E046963F.LenovoCompanion",
+        "LenovoCompanyLimited.LenovoVantageService",
+        "LGElectronics.LGMonitorApp",
+        "DellInc.DellSupportAssistforPCs",
+        "DellInc.DellDigitalDelivery",
+        "DellInc.DellMobileConnect"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,712 @@
+# MainWindow-TweaksBuilder.ps1
+# Dynamic tweaks UI construction from Features.json, tweak state management, selection clear, and search/highlight.
+
+<#
+    .SYNOPSIS
+        Resolves localized labels, tooltips, and options for a tweak control.
+
+    .DESCRIPTION
+        Provides consistent text for individual features and groups during control creation
+        and language changes.
+
+    .PARAMETER Mapping
+        A control mapping with Type and either FeatureId or GroupId and Values. Group values
+        contain FeatureIds and fallback Label text.
+
+    .PARAMETER Features
+        The feature definitions keyed by FeatureId. Defaults to $script:Features.
+
+    .OUTPUTS
+        PSCustomObject. Label, ToolTip, and Options, beginning with the No Change option.
+#>
+function Get-TweakControlText {
+    param(
+        [hashtable]$Mapping,
+        [hashtable]$Features = $script:Features
+    )
+
+    $options = @((Get-Translation -Key 'TweaksOptionNoChange'))
+    if ($Mapping.Type -eq 'group') {
+        $label = Get-Translation -Key $Mapping.GroupId -Field 'Label' -Section 'UiGroups'
+        $tooltip = Get-Translation -Key $Mapping.GroupId -Field 'ToolTip' -Section 'UiGroups'
+        $options += @($Mapping.Values | ForEach-Object {
+            Get-GroupValueTranslation -GroupId $Mapping.GroupId -FeatureId $_.FeatureIds[0] -FallbackLabel $_.Label
+        })
+    }
+    else {
+        $feature = $Features[$Mapping.FeatureId]
+        $label = Get-Translation -Key $Mapping.FeatureId -Field 'Label' -Section 'Features'
+        $tooltip = if ($feature.DisableWhenApplied -eq $true) {
+            Get-Translation -Key 'TweaksAlreadyAppliedTooltip'
+        }
+        else { Get-Translation -Key $Mapping.FeatureId -Field 'ToolTip' -Section 'Features' }
+        $optionKey = if ($Mapping.FeatureId -match '^Disable') { 'TweaksOptionDisable' }
+            elseif ($Mapping.FeatureId -match '^Enable') { 'TweaksOptionEnable' }
+            else { 'TweaksOptionApply' }
+        $options += Get-Translation -Key $optionKey
+    }
+
+    return [PSCustomObject]@{ Label = $label; ToolTip = $tooltip; Options = $options }
+}
+
+<#
+    .SYNOPSIS
+        Rebuilds localized feature and undo label lookups.
+
+    .DESCRIPTION
+        Keeps feature names used in change overviews in sync with the active language.
+
+    .PARAMETER Features
+        The feature definitions to translate. Defaults to the values of $script:Features.
+#>
+function Update-FeatureLabelLookup {
+    param([object[]]$Features = @($script:Features.Values))
+
+    $script:FeatureLabelLookup = @{}
+    $script:UndoFeatureLabelLookup = @{}
+    foreach ($feature in $Features) {
+        $script:FeatureLabelLookup[$feature.FeatureId] = Get-Translation -Key $feature.FeatureId -Field 'Label' -Section 'Features'
+        if ($feature.UndoLabel) {
+            $script:UndoFeatureLabelLookup[$feature.FeatureId] = Get-Translation -Key $feature.FeatureId -Field 'UndoLabel' -Section 'Features'
+        }
+    }
+}
+
+<#
+    .SYNOPSIS
+        Builds the main window's dynamic tweak controls from Features.json.
+
+    .PARAMETER Window
+        The main window whose category columns receive the generated controls.
+
+    .PARAMETER WinVersion
+        The Windows build number used for the category-icon fallback.
+
+    .NOTES
+        Initializes script-scoped control and category mappings used by the tweak UI.
+#>
+function New-DynamicTweakControls {
+    param(
+        [System.Windows.Window]$Window,
+        [int]$WinVersion
+    )
+
+    $featuresJson = Import-JsonFile -filePath $script:FeaturesFilePath -expectedVersion "1.0"
+
+    if (-not $featuresJson) {
+        throw "Unable to load Features.json file. The GUI cannot continue without feature definitions."
+    }
+
+    # Column containers
+    $col0 = $Window.FindName('Column0Panel')
+    $col1 = $Window.FindName('Column1Panel')
+    $col2 = $Window.FindName('Column2Panel')
+    $columns = @($col0, $col1, $col2) | Where-Object { $_ -ne $null }
+
+    # Clear all columns for fully dynamic panel creation
+    foreach ($col in $columns) {
+        if ($col) { $col.Children.Clear() }
+    }
+
+    $script:UiControlMappings = @{}
+    $script:CategoryCardMap = @{}
+    $script:CategoryLanguageControls = @()
+    $script:TweaksCompactMode = $null
+    $script:TweaksCardsMovedFromCol2 = @()
+
+    <#
+        .SYNOPSIS
+            Creates and registers a labeled combo box or a checkbox for a tweak.
+
+        .PARAMETER Parent
+            The panel that receives the generated control.
+
+        .PARAMETER LabelText
+            The display and automation label for the tweak.
+
+        .PARAMETER ComboName
+            The name used to register the generated control.
+
+        .PARAMETER Items
+            The available tweak options; two options produce a checkbox.
+
+        .OUTPUTS
+            System.Windows.Controls.Control. The generated checkbox or combo box.
+    #>
+    function New-LabeledCombo($parent, $labelText, $comboName, $items) {
+        # If only 2 items (No Change + one option), use a checkbox instead
+        if ($items.Count -eq 2) {
+            $checkbox = New-Object System.Windows.Controls.CheckBox
+            $checkbox.Content = $labelText
+            $checkbox.Name = $comboName
+            $checkbox.SetValue([System.Windows.Automation.AutomationProperties]::NameProperty, $labelText)
+            $checkbox.IsChecked = $false
+            $checkbox.Style = $Window.Resources["FeatureCheckboxStyle"]
+            $parent.Children.Add($checkbox) | Out-Null
+
+            # Register the checkbox with the window's name scope
+            try {
+                [System.Windows.NameScope]::SetNameScope($checkbox, [System.Windows.NameScope]::GetNameScope($Window))
+                $Window.RegisterName($comboName, $checkbox)
+            }
+            catch {
+                # Name might already be registered, ignore
+            }
+
+            return $checkbox
+        }
+
+        # Otherwise use a combobox for multiple options
+        # Wrap label in a Border for search highlighting
+        $lblBorder = New-Object System.Windows.Controls.Border
+        $lblBorder.Style = $Window.Resources['LabelBorderStyle']
+        $lblBorderName = "$comboName`_LabelBorder"
+        $lblBorder.Name = $lblBorderName
+
+        $lbl = New-Object System.Windows.Controls.TextBlock
+        $lbl.Text = $labelText
+        $lbl.Style = $Window.Resources['LabelStyle']
+        $labelName = "$comboName`_Label"
+        $lbl.Name = $labelName
+
+        $lblBorder.Child = $lbl
+        $parent.Children.Add($lblBorder) | Out-Null
+
+        # Register the label border with the window's name scope
+        try {
+            [System.Windows.NameScope]::SetNameScope($lblBorder, [System.Windows.NameScope]::GetNameScope($Window))
+            $Window.RegisterName($lblBorderName, $lblBorder)
+        }
+        catch {
+            # Name might already be registered, ignore
+        }
+
+        $combo = New-Object System.Windows.Controls.ComboBox
+        $combo.Name = $comboName
+        $combo.SetValue([System.Windows.Automation.AutomationProperties]::NameProperty, $labelText)
+        foreach ($item in $items) { $comboItem = New-Object System.Windows.Controls.ComboBoxItem; $comboItem.Content = $item; $combo.Items.Add($comboItem) | Out-Null }
+        $combo.SelectedIndex = 0
+        $parent.Children.Add($combo) | Out-Null
+
+        # Register the combo box with the window's name scope
+        try {
+            [System.Windows.NameScope]::SetNameScope($combo, [System.Windows.NameScope]::GetNameScope($Window))
+            $Window.RegisterName($comboName, $combo)
+        }
+        catch {
+            # Name might already be registered, ignore
+        }
+
+        return $combo
+    }
+
+    <#
+        .SYNOPSIS
+            Attaches a wrapping tooltip to a tweak control and its label border.
+
+        .PARAMETER Control
+            The tweak control receiving the tooltip.
+
+        .PARAMETER TooltipText
+            The localized text displayed by the tooltip.
+
+        .PARAMETER ShowOnDisabled
+            Enables tooltip display even when the tweak control is disabled.
+    #>
+    function Set-TweakControlToolTip($control, $tooltipText, [switch]$ShowOnDisabled) {
+        $tipBlock = New-Object System.Windows.Controls.TextBlock
+        $tipBlock.Text = $tooltipText
+        $tipBlock.TextWrapping = 'Wrap'
+        $tipBlock.MaxWidth = 420
+        $control.ToolTip = $tipBlock
+        if ($ShowOnDisabled) {
+            [System.Windows.Controls.ToolTipService]::SetShowOnDisabled($control, $true)
+        }
+        $labelBorder = $Window.FindName("$($control.Name)_LabelBorder")
+        if ($labelBorder) { $labelBorder.ToolTip = $tipBlock }
+    }
+
+    <#
+        .SYNOPSIS
+            Creates and maps a localized control for an individual feature.
+
+        .PARAMETER Feature
+            The feature definition to display.
+
+        .PARAMETER Parent
+            The category panel that receives the generated control.
+
+        .PARAMETER CategoryId
+            The category identifier stored in the control mapping.
+    #>
+    function Add-FeatureTweakControl($feature, $parent, $categoryId) {
+        $mapping = @{ Type = 'feature'; FeatureId = $feature.FeatureId; CategoryId = $categoryId }
+        $text = Get-TweakControlText -Mapping $mapping -Features $featureMap
+        $controlName = ("Feature_{0}_Combo" -f $feature.FeatureId) -replace '[^a-zA-Z0-9_]', ''
+        $control = New-LabeledCombo -parent $parent -labelText $text.Label -comboName $controlName -items $text.Options
+        if ($feature.ToolTip -or $feature.DisableWhenApplied -eq $true) {
+            Set-TweakControlToolTip -control $control -tooltipText $text.ToolTip -ShowOnDisabled
+        }
+        $script:UiControlMappings[$controlName] = $mapping
+    }
+
+    <#
+        .SYNOPSIS
+            Returns the Features wiki URL for a tweak category.
+
+        .PARAMETER Category
+            The category name converted to a wiki anchor.
+
+        .OUTPUTS
+            System.String. The category URL, or the Features page for an empty category.
+    #>
+    function Get-WikiUrlForCategory($category) {
+        if (-not $category) { return 'https://github.com/Raphire/Win11Debloat/wiki/Features' }
+
+        $slug = $category.ToLowerInvariant()
+        $slug = $slug -replace '&', ''
+        $slug = $slug -replace '[^a-z0-9\s-]', ''
+        $slug = $slug -replace '\s', '-'
+
+        return "https://github.com/Raphire/Win11Debloat/wiki/Features#$slug"
+    }
+
+    <#
+        .SYNOPSIS
+            Returns the existing category panel or creates and registers a new one.
+
+        .PARAMETER CategoryObj
+            The category definition, with Name and Icon for internal use (the map key, the
+            wiki-link slug) and CategoryId for the translated header shown to the user.
+
+        .OUTPUTS
+            System.Windows.Controls.StackPanel. The category's content panel.
+    #>
+    function Get-OrCreateCategoryCard($categoryObj) {
+        $categoryName = $categoryObj.Name
+        $categoryIcon = $categoryObj.Icon
+        $categoryLabel = Get-Translation -Key $categoryObj.CategoryId -Field 'Label' -Section 'Categories'
+
+        if ($script:CategoryCardMap.ContainsKey($categoryName)) { return $script:CategoryCardMap[$categoryName] }
+
+        # Create a new card Border + StackPanel and add to shortest column
+        $target = $columns | Sort-Object @{Expression = { $_.Children.Count }; Ascending = $true }, @{Expression = { $columns.IndexOf($_) }; Ascending = $true } | Select-Object -First 1
+
+        $border = New-Object System.Windows.Controls.Border
+        $border.Style = $Window.Resources['CategoryCardBorderStyle']
+        $border.Tag = 'DynamicCategory'
+
+        $panel = New-Object System.Windows.Controls.StackPanel
+        $safe = ($categoryName -replace '[^a-zA-Z0-9_]', '_')
+        $panel.Name = "Category_{0}_Panel" -f $safe
+
+        $headerRow = New-Object System.Windows.Controls.StackPanel
+        $headerRow.Orientation = 'Horizontal'
+
+        # Add category icon
+        $icon = New-Object System.Windows.Controls.TextBlock
+        # Convert HTML entity to character (e.g., &#xE72E; -> actual character)
+        if ($categoryIcon -match '&#x([0-9A-Fa-f]+);') {
+            $hexValue = [Convert]::ToInt32($matches[1], 16)
+            if ($WinVersion -lt 22000 -and $hexValue -eq 0xE794) {
+                $hexValue = 0xE734
+            }
+            $icon.Text = [char]$hexValue
+        }
+        $icon.Style = $Window.Resources['CategoryHeaderIcon']
+        $headerRow.Children.Add($icon) | Out-Null
+
+        $header = New-Object System.Windows.Controls.TextBlock
+        $header.Text = $categoryLabel
+        $header.Style = $Window.Resources['CategoryHeaderTextBlock']
+        $headerRow.Children.Add($header) | Out-Null
+
+        $helpIcon = New-Object System.Windows.Controls.TextBlock
+        $helpIcon.Text = '(?)'
+        $helpIcon.Style = $Window.Resources['CategoryHelpLinkTextStyle']
+
+        $helpBtn = New-Object System.Windows.Controls.Button
+        $helpBtn.Content = $helpIcon
+        $helpBtn.ToolTip = Get-Translation -Key 'TweaksCategoryHelpTooltip' -FormatArgs @($categoryLabel)
+        $helpBtn.Tag = (Get-WikiUrlForCategory -category $categoryName)
+        $helpBtn.Style = $Window.Resources['CategoryHelpLinkButtonStyle']
+        $helpBtn.Add_Click({
+                param($button, $e)
+                if ($button.Tag) { Start-Process $button.Tag }
+            })
+        $headerRow.Children.Add($helpBtn) | Out-Null
+        $script:CategoryLanguageControls += @{ CategoryId = $categoryObj.CategoryId; Header = $header; HelpButton = $helpBtn }
+
+        $panel.Children.Add($headerRow) | Out-Null
+
+        $border.Child = $panel
+        $target.Children.Add($border) | Out-Null
+
+        $script:CategoryCardMap[$categoryName] = $panel
+        return $panel
+    }
+
+    # Determine categories present (from lists and features)
+    $categoriesPresent = @{}
+    if ($featuresJson.UiGroups) {
+        foreach ($g in $featuresJson.UiGroups) { if ($g.Category) { $categoriesPresent[$g.Category] = $true } }
+    }
+    foreach ($f in $featuresJson.Features) { if ($f.Category) { $categoriesPresent[$f.Category] = $true } }
+
+    # Create cards in the order defined in Features.json Categories (if present)
+    $orderedCategories = @()
+    if ($featuresJson.Categories) {
+        foreach ($c in $featuresJson.Categories) {
+            $categoryName = if ($c -is [string]) { $c } else { $c.Name }
+            if ($categoriesPresent.ContainsKey($categoryName)) {
+                # Store the full category object (or create one with default icon for string categories).
+                # A category without its own CategoryId falls back to its Name, same as before CategoryId existed.
+                $categoryObj = if ($c -is [string]) {
+                    @{Name = $c; CategoryId = $c; Icon = '&#xE712;' }
+                }
+                elseif (-not $c.CategoryId) {
+                    @{Name = $c.Name; CategoryId = $c.Name; Icon = $c.Icon }
+                }
+                else {
+                    $c
+                }
+                $orderedCategories += $categoryObj
+            }
+        }
+    }
+    else {
+        # For backward compatibility, create category objects from keys
+        foreach ($catName in $categoriesPresent.Keys) {
+            $orderedCategories += @{Name = $catName; CategoryId = $catName; Icon = '&#xE712;' }
+        }
+    }
+
+    # Build a FeatureId -> feature lookup for version filtering in groups
+    $featureMap = @{}
+    foreach ($f in $featuresJson.Features) {
+        $featureMap[$f.FeatureId] = $f
+    }
+
+    foreach ($categoryObj in $orderedCategories) {
+        $categoryName = $categoryObj.Name
+        $categoryId = $categoryObj.CategoryId
+
+        # Card is created lazily on the first rendered item
+        $panel = $null
+
+        # Collect groups and features for this category, then sort by priority
+        $categoryItems = @()
+
+        # Add any groups for this category
+        if ($featuresJson.UiGroups) {
+            $groupIndex = 0
+            foreach ($group in $featuresJson.UiGroups) {
+                if ($group.Category -ne $categoryName) { $groupIndex++; continue }
+                $categoryItems += [PSCustomObject]@{
+                    Type          = 'group'
+                    Data          = $group
+                    Priority      = if ($null -ne $group.Priority) { $group.Priority } else { [int]::MaxValue }
+                    OriginalIndex = $groupIndex
+                }
+                $groupIndex++
+            }
+        }
+
+        # Add individual features for this category
+        $featureIndex = 0
+        foreach ($feature in $featuresJson.Features) {
+            if ($feature.Category -ne $categoryName) { $featureIndex++; continue }
+
+            # Check version and feature compatibility using Features.json
+            if (-not (Test-FeatureSupportedOnBuild -Feature $feature -Build $WinVersion) -or ($feature.FeatureId -eq 'DisableModernStandbyNetworking' -and (-not $script:ModernStandbySupported))) {
+                $featureIndex++; continue
+            }
+
+            # Skip if feature part of a group
+            $inGroup = $false
+            if ($featuresJson.UiGroups) {
+                foreach ($g in $featuresJson.UiGroups) { foreach ($val in $g.Values) { if ($val.FeatureIds -contains $feature.FeatureId) { $inGroup = $true; break } }; if ($inGroup) { break } }
+            }
+            if ($inGroup) { $featureIndex++; continue }
+
+            $categoryItems += [PSCustomObject]@{
+                Type          = 'feature'
+                Data          = $feature
+                Priority      = if ($null -ne $feature.Priority) { $feature.Priority } else { [int]::MaxValue }
+                OriginalIndex = $featureIndex
+            }
+            $featureIndex++
+        }
+
+        # Sort by priority first, then by original index for items with same/no priority
+        $sortedItems = $categoryItems | Sort-Object -Property Priority, OriginalIndex
+
+        # Render sorted items
+        foreach ($item in $sortedItems) {
+            if ($item.Type -eq 'group') {
+                $group = $item.Data
+                # Filter values by Windows version compatibility of their referenced features
+                $filteredValues = @($group.Values | Where-Object {
+                    $allCompatible = $true
+                    foreach ($fid in $_.FeatureIds) {
+                        if ($featureMap.ContainsKey($fid)) {
+                            $f = $featureMap[$fid]
+                            if (-not (Test-FeatureSupportedOnBuild -Feature $f -Build $WinVersion)) {
+                                $allCompatible = $false
+                                break
+                            }
+                        }
+                    }
+                    $allCompatible
+                })
+                # Skip the group entirely if all values are incompatible with this Windows version
+                if ($filteredValues.Count -eq 0) { continue }
+
+                # When only 1 value remains, render as the underlying feature directly
+                if ($filteredValues.Count -eq 1) {
+                    $featureIds = $filteredValues[0].FeatureIds
+
+                    if (-not $featureIds -or $featureIds.Count -eq 0) { continue }
+                    
+                    $soleFid = $featureIds[0]
+
+                    if ($featureMap.ContainsKey($soleFid)) {
+                        if (-not $panel) { $panel = Get-OrCreateCategoryCard -categoryObj $categoryObj }
+                        Add-FeatureTweakControl -feature $featureMap[$soleFid] -parent $panel -categoryId $categoryId
+                    }
+                    continue
+                }
+
+                $mapping = @{ Type = 'group'; GroupId = $group.GroupId; Values = $filteredValues; CategoryId = $categoryId }
+                $text = Get-TweakControlText -Mapping $mapping -Features $featureMap
+                $comboName = 'Group_{0}Combo' -f $group.GroupId
+                if (-not $panel) { $panel = Get-OrCreateCategoryCard -categoryObj $categoryObj }
+                $combo = New-LabeledCombo -parent $panel -labelText $text.Label -comboName $comboName -items $text.Options
+                if ($group.ToolTip) {
+                    Set-TweakControlToolTip -control $combo -tooltipText $text.ToolTip
+                }
+                $script:UiControlMappings[$comboName] = $mapping
+            }
+            elseif ($item.Type -eq 'feature') {
+                if (-not $panel) { $panel = Get-OrCreateCategoryCard -categoryObj $categoryObj }
+                Add-FeatureTweakControl -feature $item.Data -parent $panel -categoryId $categoryId
+            }
+        }
+    }
+
+    # Overview generation uses the same labels as language refresh.
+    Update-FeatureLabelLookup -Features $featuresJson.Features
+}
+
+function Update-CurrentTweakSystemState {
+    param(
+        [System.Windows.Window]$Window,
+        [bool]$ApplyToUi
+    )
+
+    if (-not $script:UiControlMappings) { return }
+    if (-not $script:Features) { return }
+
+    $featuresJson = Import-JsonFile -filePath $script:FeaturesFilePath -expectedVersion "1.0"
+    if (-not $featuresJson) { return }
+
+    $groupMap = @{}
+    if ($featuresJson.UiGroups) {
+        foreach ($g in $featuresJson.UiGroups) {
+            $groupMap[$g.GroupId] = $g
+        }
+    }
+
+    foreach ($controlName in $script:UiControlMappings.Keys) {
+        $control = $Window.FindName($controlName)
+        if (-not $control) { continue }
+        $mapping = $script:UiControlMappings[$controlName]
+
+        if ($control -is [System.Windows.Controls.CheckBox] -and $mapping.Type -eq 'feature') {
+            $applied = $false
+            try { $applied = [bool](Test-FeatureApplied -FeatureId $mapping.FeatureId) } catch {}
+            $featureObj = $script:Features[$mapping.FeatureId]
+            $disableWhenApplied = $featureObj -and $featureObj.DisableWhenApplied -eq $true
+            Add-Member -InputObject $control -MemberType NoteProperty -Name 'SystemState' -Value $applied -Force
+            Add-Member -InputObject $control -MemberType NoteProperty -Name 'DisableWhenApplied' -Value $disableWhenApplied -Force
+
+            if ($ApplyToUi) {
+                $control.IsChecked = $applied
+                $control.IsEnabled = -not ($applied -and $disableWhenApplied)
+                Add-Member -InputObject $control -MemberType NoteProperty -Name 'InitialState' -Value $applied -Force
+            }
+        }
+        elseif ($control -is [System.Windows.Controls.ComboBox] -and $mapping.Type -eq 'group') {
+            $groupId = $null
+            if ($controlName -match '^Group_(.+)Combo$') { $groupId = $matches[1] }
+            $activeIndex = 0
+            if ($groupId -and $groupMap.ContainsKey($groupId)) {
+                try { $activeIndex = Get-CurrentGroupActiveIndex -Group $groupMap[$groupId] } catch {}
+            }
+            Add-Member -InputObject $control -MemberType NoteProperty -Name 'SystemIndex' -Value $activeIndex -Force
+
+            if ($ApplyToUi) {
+                $control.SelectedIndex = $activeIndex
+                Add-Member -InputObject $control -MemberType NoteProperty -Name 'InitialIndex' -Value $activeIndex -Force
+            }
+        }
+    }
+}
+
+<#
+    .SYNOPSIS
+        Updates tweak controls to reflect the current system state.
+
+    .PARAMETER Window
+        The window that owns the generated tweak controls.
+#>
+function Set-CurrentTweakStateInUi {
+    param([System.Windows.Window]$Window)
+
+    Update-CurrentTweakSystemState -Window $Window -ApplyToUi:$true
+}
+
+function Reset-TweaksToSystemState {
+    param(
+        [System.Windows.Window]$Window,
+        [bool]$LoadSystemState
+    )
+
+    if (-not $script:UiControlMappings) { return }
+
+    foreach ($controlName in $script:UiControlMappings.Keys) {
+        $control = $Window.FindName($controlName)
+        if (-not $control) { continue }
+
+        if ($control -is [System.Windows.Controls.CheckBox]) {
+            if ($LoadSystemState) {
+                # Set checkbox to the currently applied state from registry
+                $applied = if ($null -ne $control.PSObject.Properties['SystemState']) { [bool]$control.SystemState } else { $false }
+                $disableWhenApplied = $null -ne $control.PSObject.Properties['DisableWhenApplied'] -and [bool]$control.DisableWhenApplied
+                $control.IsChecked = $applied
+                $control.IsEnabled = -not ($applied -and $disableWhenApplied)
+                Add-Member -InputObject $control -MemberType NoteProperty -Name 'InitialState' -Value $applied -Force
+            }
+            else {
+                # Clear the checkbox
+                $control.IsChecked = $false
+                $control.IsEnabled = $true
+                Add-Member -InputObject $control -MemberType NoteProperty -Name 'InitialState' -Value $false -Force
+            }
+        }
+        elseif ($control -is [System.Windows.Controls.ComboBox]) {
+            if ($LoadSystemState) {
+                # Set combobox to the currently applied state from registry
+                $idx = if ($null -ne $control.PSObject.Properties['SystemIndex']) { [int]$control.SystemIndex } else { 0 }
+                $control.SelectedIndex = $idx
+                Add-Member -InputObject $control -MemberType NoteProperty -Name 'InitialIndex' -Value $idx -Force
+            }
+            else {
+                # Reset to first item (No Change)
+                $control.SelectedIndex = 0
+                Add-Member -InputObject $control -MemberType NoteProperty -Name 'InitialIndex' -Value 0 -Force
+            }
+        }
+    }
+}
+
+function Update-TweaksResponsiveColumns {
+    param([System.Windows.Window]$Window)
+
+    $tweaksGrid = $Window.FindName('TweaksGrid')
+    $col0 = $Window.FindName('Column0Panel')
+    $col1 = $Window.FindName('Column1Panel')
+    $col2 = $Window.FindName('Column2Panel')
+
+    if (-not $tweaksGrid -or -not $col0 -or -not $col1 -or -not $col2) { return }
+    if ($tweaksGrid.ColumnDefinitions.Count -lt 3) { return }
+    if ($null -eq $script:TweaksCardsMovedFromCol2) { $script:TweaksCardsMovedFromCol2 = @() }
+
+    $useTwoColumns = $Window.ActualWidth -lt 1200
+    if ($script:TweaksCompactMode -eq $useTwoColumns) { return }
+    $script:TweaksCompactMode = $useTwoColumns
+
+    if ($useTwoColumns) {
+        $tweaksGrid.ColumnDefinitions[0].Width = [System.Windows.GridLength]::new(1, [System.Windows.GridUnitType]::Star)
+        $tweaksGrid.ColumnDefinitions[1].Width = [System.Windows.GridLength]::new(1, [System.Windows.GridUnitType]::Star)
+        $tweaksGrid.ColumnDefinitions[2].Width = [System.Windows.GridLength]::new(0)
+        $col2.Visibility = 'Collapsed'
+
+        # Move third-column cards once when entering compact mode.
+        $cardsToMove = @($col2.Children) | Where-Object { $_ -is [System.Windows.UIElement] }
+        $script:TweaksCardsMovedFromCol2 = @($cardsToMove)
+        $col2.Children.Clear()
+        $targetColumns = @($col0, $col1)
+        foreach ($card in $cardsToMove) {
+            $target = $targetColumns |
+                Sort-Object @{Expression = { $_.Children.Count }; Ascending = $true }, @{Expression = { $targetColumns.IndexOf($_) }; Ascending = $true } |
+                Select-Object -First 1
+            $target.Children.Add($card) | Out-Null
+        }
+        return
+    }
+
+    $tweaksGrid.ColumnDefinitions[0].Width = [System.Windows.GridLength]::new(1, [System.Windows.GridUnitType]::Star)
+    $tweaksGrid.ColumnDefinitions[1].Width = [System.Windows.GridLength]::new(1, [System.Windows.GridUnitType]::Star)
+    $tweaksGrid.ColumnDefinitions[2].Width = [System.Windows.GridLength]::new(1, [System.Windows.GridUnitType]::Star)
+    $col2.Visibility = 'Visible'
+
+    foreach ($card in (@($script:TweaksCardsMovedFromCol2) | Where-Object { $_ -is [System.Windows.UIElement] })) {
+        if ($col0.Children.Contains($card)) {
+            $col0.Children.Remove($card) | Out-Null
+        }
+        elseif ($col1.Children.Contains($card)) {
+            $col1.Children.Remove($card) | Out-Null
+        }
+        $col2.Children.Add($card) | Out-Null
+    }
+    $script:TweaksCardsMovedFromCol2 = @()
+}
+
+function Clear-TweakSelections {
+    param([System.Windows.Window]$Window)
+
+    if (-not $script:UiControlMappings) { return }
+
+    foreach ($controlName in $script:UiControlMappings.Keys) {
+        $control = $Window.FindName($controlName)
+        if ($control -is [System.Windows.Controls.CheckBox]) {
+            $control.IsChecked = $false
+            $control.IsEnabled = $true
+        }
+        elseif ($control -is [System.Windows.Controls.ComboBox]) {
+            $control.SelectedIndex = 0
+        }
+    }
+}
+
+function Clear-TweakHighlights {
+    param([System.Windows.Window]$Window)
+
+    $col0 = $Window.FindName('Column0Panel')
+    $col1 = $Window.FindName('Column1Panel')
+    $col2 = $Window.FindName('Column2Panel')
+    $columns = @($col0, $col1, $col2) | Where-Object { $_ -ne $null }
+    foreach ($column in $columns) {
+        foreach ($card in $column.Children) {
+            if ($card -is [System.Windows.Controls.Border] -and $card.Child -is [System.Windows.Controls.StackPanel]) {
+                foreach ($control in $card.Child.Children) {
+                    if ($control -is [System.Windows.Controls.CheckBox] -or
+                        ($control -is [System.Windows.Controls.Border] -and $control.Name -like '*_LabelBorder')) {
+                        $control.Background = [System.Windows.Media.Brushes]::Transparent
+                    }
+                }
+            }
+        }
+    }
+}
+
+function Test-ComboBoxContainsMatch {
+    param ([System.Windows.Controls.ComboBox]$ComboBox, [string]$SearchText)
+
+    foreach ($item in $ComboBox.Items) {
+        $itemText = if ($item -is [System.Windows.Controls.ComboBoxItem]) { $item.Content.ToString().ToLower() } else { $item.ToString().ToLower() }
+        if ($itemText.Contains($SearchText)) { return $true }
+    }
+    return $false
+}
