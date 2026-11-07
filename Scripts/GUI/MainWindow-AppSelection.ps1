@@ -445,7 +445,11 @@ function Add-AppsToMainWindow {
     $brushUnsafe  = $Window.Resources['AppRecommendationUnsafeColor']
 
     # Create WPF controls; pump the Dispatcher every batch so the spinner keeps animating.
+    # The Name column is an Auto column shared across every row, so assigning SharedSizeGroup while
+    # the rows are still being added makes each batch re-measure the whole list (quadratic). The
+    # groups are collected here and handed to the columns once, after the last row exists.
     $batchSize = 20
+    $sharedNameColumns = New-Object System.Collections.Generic.List[System.Windows.Controls.ColumnDefinition]
     for ($i = 0; $i -lt $appsToAdd.Count; $i++) {
         $app = $appsToAdd[$i]
 
@@ -461,7 +465,7 @@ function Add-AppsToMainWindow {
         $row.Style = $Window.Resources['AppTableRowStyle']
         $c0 = New-Object System.Windows.Controls.ColumnDefinition; $c0.Width = $Window.Resources['AppTableDotColWidth']
         $c1 = New-Object System.Windows.Controls.ColumnDefinition; $c1.Width = $Window.Resources['AppTableNameColWidth']
-        $c1.SharedSizeGroup = 'AppTableName'
+        $sharedNameColumns.Add($c1)
         $c2 = New-Object System.Windows.Controls.ColumnDefinition; $c2.Width = $Window.Resources['AppTableDescColWidth']
         $c3 = New-Object System.Windows.Controls.ColumnDefinition; $c3.Width = $Window.Resources['AppTableIdColWidth']
         $row.ColumnDefinitions.Add($c0); $row.ColumnDefinitions.Add($c1)
@@ -557,6 +561,9 @@ function Add-AppsToMainWindow {
 
         if (($i + 1) % $batchSize -eq 0) { Invoke-DoEvents }
     }
+
+    # One shared-size pass for the whole list, instead of one per batch while it was still growing.
+    foreach ($nameColumn in $sharedNameColumns) { $nameColumn.SharedSizeGroup = 'AppTableName' }
 
     $sortArrowName = $Window.FindName('SortArrowName')
     $sortArrowDescription = $Window.FindName('SortArrowDescription')

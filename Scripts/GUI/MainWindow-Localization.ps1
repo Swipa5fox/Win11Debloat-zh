@@ -12,13 +12,24 @@
 function Update-WindowLanguageResources {
     param([System.Windows.Window]$Window)
 
-    $keys = @(foreach ($language in (Get-LanguageFallbackChain -Lang $script:Lang)) {
-        $language.Chrome.PSObject.Properties.Name
-    }) | Sort-Object -Unique
+    # One pass over the fallback chain builds key -> text for every window key. Calling
+    # Get-Translation per key re-walks the chain (and rebuilds it) for each of hundreds of keys,
+    # which used to cost several hundred milliseconds before the first frame.
+    $chain = @(Get-LanguageFallbackChain -Lang $script:Lang)
+    $resolvedText = @{}
+    foreach ($language in $chain) {
+        if (-not $language.Chrome) { continue }
+        foreach ($property in $language.Chrome.PSObject.Properties) {
+            # The first language in the chain that has a key wins, matching Get-Translation.
+            if (-not $resolvedText.ContainsKey($property.Name)) { $resolvedText[$property.Name] = [string]$property.Value }
+        }
+    }
+
+    $keys = @($resolvedText.Keys) | Sort-Object
     # Popups and context menus can have a separate resource lookup tree.
     $targets = @($Window, $Window.FindName('MainMenu'), $Window.FindName('PresetsPopup'), $Window.FindName('TweaksPresetsPopup')) | Where-Object { $null -ne $_ }
     foreach ($key in $keys) {
-        $text = Get-Translation -Key $key -Section 'Chrome'
+        $text = $resolvedText[$key]
         foreach ($target in $targets) { $target.Resources["Language_$key"] = $text }
     }
 }

@@ -227,6 +227,8 @@ function Show-MainWindow {
     $script:IsLoadingApps = $false
     $script:PendingDefaultMode = $false
     $script:PreloadedAppData = $null
+    # The Defender status is only read once the module page is opened; see the tab change handler.
+    $script:DefenderStatusLoaded = $false
     $script:UpdatingPresets = $false
     $script:UpdatingTweakPresets = $false
     $script:SortColumn = 'Name'
@@ -781,14 +783,13 @@ function Show-MainWindow {
         try {
             & $updateHomeContentPosition
             New-DynamicTweakControls -Window $window -WinVersion $WinVersion
-            Set-CurrentTweakStateInUi -Window $window
             Update-TweaksResponsiveColumns -Window $window
 
-            # The Defender status reads services, CIM and policy keys, so it is filled in after the
-            # window is up instead of delaying the first paint.
-            $window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
-                Update-DefenderModule -Window $window
-            }) | Out-Null
+            # The Defender status scans services, policy keys, drivers and firewall rules, which costs
+            # seconds on a machine that already lost the WMI provider. Nobody is looking at that page
+            # at startup, so the scan runs the first time the page is opened instead.
+            $defenderStateText = $window.FindName('DefenderStateText')
+            if ($defenderStateText) { $defenderStateText.Text = '' }
 
             $lastUsedSettingsJson = Import-JsonFile -filePath $script:SavedSettingsFilePath -expectedVersion "1.0" -optionalFile
             $defaultsJson = Import-JsonFile -filePath $script:DefaultSettingsFilePath -expectedVersion "1.0"
@@ -797,7 +798,14 @@ function Show-MainWindow {
 
             Initialize-TweakPresetSources -Window $window -DefaultSettingsJson $defaultsJson -LastUsedSettingsJson $lastUsedSettingsJson
             Register-TweakPresetControlStateHandlers -Window $window
-            Update-TweakPresetStates -Window $window
+
+            # Reading the current state of every tweak out of the registry, plus the preset tri-state
+            # that depends on it, costs about half a second. Neither is visible before the tweaks page
+            # is opened, so both run once the first frame is on screen instead of holding it back.
+            $window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
+                Set-CurrentTweakStateInUi -Window $window
+                Update-TweakPresetStates -Window $window
+            }) | Out-Null
 
             Initialize-MainWindowApps -Window $window -AppsPanel $appsPanel -OnlyInstalledAppsBox $onlyInstalledAppsBox -LoadingAppsIndicator $loadingAppsIndicator -ImportConfigBtn $importConfigBtn
 
@@ -858,6 +866,16 @@ function Show-MainWindow {
     # ---- Tab change event ----
     $tabControl.Add_SelectionChanged({
         Invoke-NavigationUpdate
+
+        # First visit to the Defender page: show a placeholder, then scan once the page has painted.
+        if (-not $script:DefenderStatusLoaded -and $tabControl.SelectedItem -eq $window.FindName('DefenderTab')) {
+            $script:DefenderStatusLoaded = $true
+            $defenderStateText = $window.FindName('DefenderStateText')
+            if ($defenderStateText) { $defenderStateText.Text = Get-Translation -Key 'DefenderStatusChecking' }
+            $window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
+                Update-DefenderModule -Window $window
+            }) | Out-Null
+        }
     })
 
     # ---- Tweak presets wiring ----

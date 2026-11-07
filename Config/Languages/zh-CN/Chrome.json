@@ -355,6 +355,7 @@
   "DefenderTitle": "Windows Defender 模块",
   "DefenderSubtitle": "先看清 Defender 在这台机器上还剩什么，再决定是否彻底移除。移除会连带删除它的服务、驱动、注册表项与防火墙规则，且无法在本工具内恢复。",
   "DefenderStatusTitle": "当前状态",
+  "DefenderStatusChecking": "正在检测 Defender 状态…",
   "DefenderStatusInstalled": "已安装：Defender 的服务与组件仍在运行。",
   "DefenderStatusResidue": "仅剩残留：主服务已删除，还有 {0} 项组件可以清理。",
   "DefenderStatusAbsent": "未安装：没有检测到任何 Defender 组件。",

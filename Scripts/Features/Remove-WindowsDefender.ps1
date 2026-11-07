@@ -49,7 +49,11 @@ function Get-DefenderRemovalPreflight {
     }
     $defenderPresent = $installed -or ($residue.Count -gt 0)
 
-    $tamperProtected = Test-DefenderTamperProtection
+    # Tamper protection is enforced by the Defender service, so there is nothing to query once the
+    # program itself is gone. Get-MpComputerStatus is also the single most expensive probe here: with
+    # a half-removed WMI provider it burns several seconds before failing, and the result cannot
+    # matter for a machine that has no Defender left to uninstall.
+    $tamperProtected = if ($installed) { Test-DefenderTamperProtection } else { $false }
     $thirdParty = @(Get-DefenderThirdPartyAntivirus)
 
     $blockers = @()
