@@ -192,6 +192,9 @@ if (-not $isAdmin -and -not $VerifyDefenderRemoval) {
 
 # Define script-level variables & paths
 $script:Version = "2026.10.31"
+# Release number of this repository, shown next to the upstream date in the about window so a
+# screenshot from a user identifies the build. Build-Release.ps1 only rewrites the line above.
+$script:ReleaseVersion = "v0.1.5.1"
 $configPath = Join-Path $PSScriptRoot 'Config'
 # Deployment environments such as SCCM task sequences may not define LOCALAPPDATA.
 if ([string]::IsNullOrWhiteSpace($env:LOCALAPPDATA)) {
