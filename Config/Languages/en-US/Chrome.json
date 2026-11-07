@@ -349,6 +349,7 @@
   "DefenderTitle": "Windows Defender",
   "DefenderSubtitle": "See exactly what Defender still has on this machine before deciding to remove it. Removal deletes its services, drivers, registry keys and firewall rules, and cannot be undone from this tool.",
   "DefenderStatusTitle": "Current state",
+  "DefenderStatusChecking": "Checking Defender status...",
   "DefenderStatusInstalled": "Installed: Defender's services and components are still running.",
   "DefenderStatusResidue": "Residue only: the main service is gone, {0} component(s) can still be cleaned up.",
   "DefenderStatusAbsent": "Not installed: no trace of Defender was found.",
