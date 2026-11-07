@@ -59,8 +59,9 @@ function Show-AboutDialog {
     $kofiLink = $aboutWindow.FindName('KofiLink')
     $closeButton = $aboutWindow.FindName('CloseButton')
     
-    # Set version
-    $versionText.Text = $script:Version
+    # Set version. The upstream date stays first; this repository's own release number follows it so
+    # that a screenshot or log from a user is enough to tell which build they are running.
+    $versionText.Text = if ($script:ReleaseVersion) { "$($script:Version) / $($script:ReleaseVersion)" } else { $script:Version }
     
     # Title bar drag to move window
     $titleBar.Add_MouseLeftButtonDown({

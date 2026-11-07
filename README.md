@@ -1,40 +1,47 @@
-# Win11Debloat 中文版
+# Win11Debloat 中文增强版
 
-[Win11Debloat](https://github.com/Raphire/Win11Debloat) 的**完整中文汉化版**。一个轻量、易用的 PowerShell 脚本，无需安装即可清理 Windows 预装应用、关闭遥测、移除烦人的界面元素。本仓库在上游基础上把图形界面、**命令行输出与日志**、启动提示全部译成中文，并额外提供**彻底移除 Microsoft Defender** 的能力。
+[Win11Debloat](https://github.com/Raphire/Win11Debloat) 的增强分支。上游是一个轻量、免安装的 PowerShell 脚本，用来清理 Windows 预装应用、关闭遥测、移除烦人的界面元素。
 
-> 本版基于上游 **2026.10.30** 版本整合。上游自 2026.10 起已自带简体中文界面语言包，本仓库在此之上补齐了命令行与日志的中文化，并保留了 Defender 模块。
+这个仓库在上游基础上做了三件事：**全链路中文**（不只界面，控制台与日志也一起）、**彻底移除 Microsoft Defender**（上游不做的功能）、**更快的启动**。
+
+> 基于上游 **2026.10.30** 版本整合，当前发布版 `v0.1.5.1`。
 
 <img src="/Assets/Images/home.png" alt="Win11Debloat 首页" width="100%">
+
+## 这个仓库做了什么
+
+### 一、彻底移除 Microsoft Defender
+
+上游只做「优化项」，从来不碰卸载。这一整块是从零写的：服务注册（含新版才有的 `MsSecCore` / `MsSecFlt` / `MsSecWfp` 平台驱动）、过滤与早期启动驱动、策略与配置键、Shell / COM / WinRT 注册、`WebThreatDefense` 主机组、开机启动项、防火墙规则、计划任务、程序目录一起删，另配残留检测与只读自查。
+
+入口是主窗口独立的「Windows Defender」页，或命令行 `-RemoveWindowsDefender`。**不可撤销**，细节见 [下面的章节](#彻底移除-microsoft-defender危险操作)。
+
+### 二、全链路中文
+
+上游自 2026.10 起自带简体中文界面包，但只到界面为止——控制台菜单、参数校验、执行进度、错误提示、写进 `Logs/` 的日志仍然是英文。本版补上了这一层：以英文原文为键的 `Console.json`（351 条），按「当前语言 → 英文 → 原文」三级回退，缺译不会冒出键名。
+
+界面在上游中文包基础上校订了约 160 条直译痕迹较重的文案，并补齐 Defender 与设置窗口相关的键。功能项、应用说明、分类标题全部可读，不需要边看边猜。
+
+### 三、启动更快
+
+`v0.1.5.1` 把「双击到窗口可交互」从 **4.7 秒压到 3.7 秒**，应用列表就绪从 4.8 秒压到 4.2 秒。做法和剩余开销见 [性能](#性能) 一节。
 
 ## 界面预览
 
 #### 应用移除
 <img src="/Assets/Images/apps.png" alt="Win11Debloat 应用移除" width="100%">
 
-162 个预装应用（含 HP / Dell / Lenovo 等 OEM 应用）全部配好中文名称与说明，按「推荐 / 可选 / 不推荐」三档标注移除风险，支持搜索、排序与快速预设。
+162 个预装应用（含 HP / Dell / Lenovo 等 OEM 应用）都配了名称与说明，按「推荐 / 可选 / 不推荐」三档标注移除风险，支持搜索、排序与快速预设。
 
 #### 系统优化
 <img src="/Assets/Images/tweaks.png" alt="Win11Debloat 系统优化" width="100%">
 
-12 个分类共 96 项优化，名称、说明、悬停提示全部中文化，鼠标悬停即看详细解释。另有 9 项功能不归入任何分类、不在这个列表里展示（强制卸载 Edge、替换开始菜单布局、彻底移除 Defender 等）。
+12 个分类共 96 项优化，鼠标悬停即看详细解释。另有 9 项不归入任何分类、不在这个列表里展示（强制卸载 Edge、替换开始菜单布局、彻底移除 Defender 等）。
 
 #### 部署设置
 <img src="/Assets/Images/deploy.png" alt="Win11Debloat 部署设置" width="100%">
 
 指定更改应用到哪个用户，可选创建注册表备份与系统还原点，应用前可先预览全部变更。
-
-## 汉化范围
-
-| 部分 | 内容 | 数量 |
-|---|---|---|
-| 图形界面 | 主窗口（含 Windows Defender 模块页）、应用选择、应用进度、导入导出、还原备份、消息框、关于、气泡提示、Defender 移除确认、设置共 10 个窗体 | 385 条界面文案 |
-| 功能项 | 每个功能的名称 / 说明 / 执行中 / 撤销 / 撤销中文案，外加 UI 分组 | 105 项 + 10 分组 |
-| 应用列表 | 预装应用的显示名称与移除说明（含 HP / Dell / Lenovo 等 OEM 应用） | 162 条 |
-| 优化项分类 | 系统优化页 12 个分类的标题 | 12 条 |
-| 命令行与日志 | 菜单、选项、确认提示、错误提示、Defender 残留检查 | 351 条 |
-| 启动器 | `Run.bat` 与一键下载脚本按系统语言自动切换 | — |
-
-合计约 **1000 条**文案，全部中文化。
 
 ## 系统要求
 
@@ -121,8 +128,6 @@ gh attestation verify Win11Debloat.zip --repo Swipa5fox/Win11Debloat-zh
 
 每一项优化都有对应的开关（如 `-DisableChromeAI`、`-DisableDriverUpdates`），完整列表用 `.\Win11Debloat.ps1 -?` 查看，或直接看 `Config/Features.json` 的 `Features` 段。
 
-完整的 100 多个开关（每项优化都有对应参数）见 `Win11Debloat.ps1` 顶部的 `param` 块，一般用不到手动指定——界面里勾选即可。
-
 ## 彻底移除 Microsoft Defender（危险操作）
 
 图形界面里有一个独立的「Windows Defender」页，命令行是 `-RemoveWindowsDefender`。**它删组件，不是关开关**：服务注册（`WinDefend`、`WdNisSvc`、`Sense`、`SecurityHealthService`，以及新版才有的 `MsSecCore` / `MsSecFlt` / `MsSecWfp` 平台驱动）、文件系统过滤与早期启动驱动（`WdFilter`、`WdNisDrv`、`WdBoot`）、策略与配置键、Shell/COM/WinRT 注册、`WebThreatDefense` 主机组、开机启动项、防火墙规则、计划任务、程序目录一并删除。
@@ -197,7 +202,25 @@ gh attestation verify Win11Debloat.zip --repo Swipa5fox/Win11Debloat-zh
 
 > 命令行模式下脚本跑完会停在「按任意键退出」，这是一层防窗口闪退的保护。写进自动化脚本时记得加 `-Silent`，否则会一直等你按键。
 
-> 这一项是上游没有的，属于本仓库新增功能。上游只做「优化项」，不碰 Defender 的卸载；微软也不支持客户端系统卸载 Defender，所以出问题别指望官方支持。
+> 微软不支持客户端系统卸载 Defender，出问题别指望官方支持。这个功能只写给「清楚自己在干什么」的人。
+
+## 性能
+
+`v0.1.5.1` 实测（Build 26300，同一台机器冷启动，从双击到窗口可交互）：
+
+| 指标 | 上一版 | 现在 |
+|---|---|---|
+| 首帧可交互 | 4.7 秒 | **3.7 秒** |
+| 应用列表就绪 | 4.8 秒 | **4.2 秒** |
+
+主要的四处改动：
+
+- **Defender 状态不在启动时扫了**，改为首次打开「Windows Defender」页才查。机器上 Defender 已被移除时，那一次扫描要跑满 5 秒，而启动时根本没人看那一页
+- **105 个功能项的当前状态与预设状态改为首帧之后再读**，不再按住启动画面
+- **语言资源改为一次遍历建表**，不再每个键都重走一遍回退链
+- **应用列表名称列的共享宽度改为整表一次设置**，避免边加行边重算
+
+剩下这 3.7 秒花在哪：约 1 秒是 103 个脚本被逐个加载，约 1.5 秒是 WPF 解析界面文件，其余是窗口事件挂载与 100 多个功能项控件的创建。这是「纯脚本 + WPF」方案的固定成本，除非改成编译型程序，否则压不下去。
 
 ## 语言与主题
 
@@ -211,18 +234,18 @@ gh attestation verify Win11Debloat.zip --repo Swipa5fox/Win11Debloat-zh
 
 ## 与上游的差异
 
-上游自 2026.10 起已自带简体中文界面语言包，本仓库的增量集中在「界面之外」和「上游不做的功能」：
-
 | 改动 | 说明 |
 |---|---|
-| 命令行与日志中文包 | 上游的 `Console.json` 机制没有任何数据文件，控制台与日志全是英文。本仓库补了 `zh-CN/Console.json`（351 条）与 `en-US/Console.json` 基线，按「英文原文 → 译文」映射，缺译回退原文 |
-| 界面措辞校订 | 在上游中文语言包基础上补了 Defender 与设置窗口相关键，并按中文表达习惯重写了约 160 条直译文案；界面文案合计 385 条 |
-| 新增「彻底移除 Microsoft Defender」 | 上游没有的功能：删除 Defender 的服务注册（含 MsSec* 平台驱动）、过滤与早期启动驱动、策略与配置键、Shell/COM/WinRT 注册、WebThreatDefense 主机组、开机启动项、防火墙规则、任务与目录，不可撤销。入口是主窗口独立的「Windows Defender」页与 `-RemoveWindowsDefender`，带 `REMOVE` 输入确认；另有只读的 `-VerifyDefenderRemoval` 自查入口 |
+| **彻底移除 Microsoft Defender** | 上游没有的功能：删除服务注册（含 `MsSec*` 平台驱动）、过滤与早期启动驱动、策略与配置键、Shell/COM/WinRT 注册、`WebThreatDefense` 主机组、开机启动项、防火墙规则、任务与目录，不可撤销。入口是主窗口独立的「Windows Defender」页与 `-RemoveWindowsDefender`，带 `REMOVE` 输入确认；另有只读的 `-VerifyDefenderRemoval` 自查入口 |
+| **控制台与日志中文包** | 上游的 `Console.json` 机制没有任何数据文件，控制台与日志全是英文。本仓库补了 `zh-CN/Console.json`（351 条）与 `en-US/Console.json` 基线，按「英文原文 → 译文」映射，缺译回退原文 |
+| **启动性能** | 首帧 4.7 秒 → 3.7 秒，应用列表 4.8 秒 → 4.2 秒（延迟 Defender 扫描、延迟状态读取、语言资源一次建表、列表列宽整表设置） |
+| 界面文案校订 | 在上游中文包基础上补了 Defender 与设置窗口相关键，并按中文表达习惯重写了约 160 条直译痕迹较重的文案 |
 | 非管理员自动提权 | 不再询问 `y/n`，直接请求 UAC（上游需手动确认） |
 | 一键脚本下载本仓库发布版 | `Scripts/Get.ps1` 默认取本仓库最新 Release 的 `Win11Debloat.zip`，并用同批发布的 `SHA256SUMS` 校验；`-Dev` 仍指向上游开发分支 |
 | `Run.bat` 中英文分流 | 按 `LocaleName` 判断，中文系统显示中文提示 |
 | 反馈入口指向本仓库 | `Run.bat` 的 issue 提示、主窗口「反馈问题」菜单、应用失败时的上报按钮，均指向本仓库 issues（上游 Wiki 链接保留，因为说明文档仍在上游） |
 | 彻底移除不写入预设 | `LastUsedSettings.json` 会排除 Defender 移除，「使用上次设置」不会重放这个不可逆操作 |
+| 历史已重写 | 本仓库与上游没有共同祖先，贡献者统计只保留本仓库的提交。同步方式见下一节 |
 
 ## 同步上游更新
 
@@ -242,7 +265,7 @@ git checkout -b sync/upstream-<日期> upstream/master
 2. **两边都改过的文件**逐个重放：`git diff <旧基线> master -- <文件> | git apply -3`，冲突处手工合
 3. **语言包**以上游为准，只把 `Console.json` 与 Defender 相关键补回去；补完跑一次覆盖检查，确认没有漏译的键
 
-改完跑 `.\Scripts\Run-Tests.ps1`，全绿再提交。
+改完跑 `.\Scripts\Run-Tests.ps1`，全绿再提交。注意 `Import-LanguageFile.ps1` 一旦整份换成上游版，本仓库追加的 `Get-ConsoleText` 会一起消失，控制台前几百行输出会报「找不到命令」。
 
 ## Q&A
 
@@ -274,23 +297,21 @@ A：装一个第三方杀软（Kaspersky、Bitdefender、火绒都行），安�
 
 A：不会。整个东西就是本地跑的 PowerShell + WPF，没有遥测、没有回传。联网只发生在两处：一键脚本下载发布包、以及通过 winget 读取应用列表。
 
-**Q：界面中文不是上游自带的吗？那这个仓库还有什么意义？**
+**Q：既然上游也支持中文，这个仓库和上游到底差在哪？**
 
-A：界面中文确实从 2026.10 起上游就有了。但上游只做了界面，**命令行和日志到现在还是英文**，那个 `Console.json` 机制他们有、数据一条没写。这个仓库补的就是这一块，另外还多做了一个上游根本没有的 Defender 移除模块。逐条对照在上面「与上游的差异」。
+A：三处：**上游没有的 Defender 移除模块**、**覆盖控制台与日志的中文包**（上游有机制、零数据）、**启动性能优化**。逐条对照在上面「与上游的差异」表里。
 
 ## 致谢
 
 **地基是上游的。** 清理规则、注册表项、应用清单、界面骨架，都是 [@Raphire](https://github.com/Raphire) 的 [Win11Debloat](https://github.com/Raphire/Win11Debloat) 和它[所有贡献者](https://github.com/Raphire/Win11Debloat/graphs/contributors)几年攒下来的。没有那几百个提交，这里一个字也写不出来。
 
-**但也不是只做了翻译。** 这个仓库自己加的东西：
+这个仓库在上面加的楼层：
 
-- **彻底移除 Microsoft Defender**——上游只做「优化项」，从来不碰卸载。从服务注册、`MsSec*` 平台驱动、过滤与早期启动驱动，到 Shell / COM / WinRT 注册、`WebThreatDefense` 主机组、防火墙规则、计划任务、程序目录，加上残留检测和只读自查 `-VerifyDefenderRemoval`，这一整块是从零写的，连「删到一半中断了怎么补刀」都是自己踩出来的
-- **命令行与日志中文包**（351 条）——上游有 `Console.json` 的机制，却一条数据都没写，控制台至今是英文
-- **界面文案校订**——上游的中文包直译痕迹挺重，这里按中文表达习惯重写了约 160 条
-- **一键脚本、自动提权、反馈入口**这些本地化适配
+- **彻底移除 Microsoft Defender**——从服务注册、`MsSec*` 平台驱动、过滤与早期启动驱动，到 Shell / COM / WinRT 注册、`WebThreatDefense` 主机组、防火墙规则、计划任务、程序目录，加上残留检测和只读自查 `-VerifyDefenderRemoval`。连「删到一半中断了怎么补刀」「属主是 TrustedInstaller 时怎么夺权」都是自己踩出来的
+- **控制台与日志中文包**（351 条）——上游有 `Console.json` 的机制，却一条数据都没写
+- **启动性能**——首帧从 4.7 秒降到 3.7 秒
+- 一键脚本、自动提权、反馈入口这些适配
 
-上游是地基，Defender 模块和整套中文输出是这上面加的楼层。
+用得顺手的话，Star 给[上游仓库](https://github.com/Raphire/Win11Debloat)——真正干活的是他们；觉得 Defender 模块和中文输出有用，也欢迎给[这个仓库](https://github.com/Swipa5fox/Win11Debloat-zh)点一个。
 
-用得顺手的话，Star 给[上游仓库](https://github.com/Raphire/Win11Debloat)——真正干活的是他们；觉得中文和 Defender 这块有用，也欢迎给[这个仓库](https://github.com/Swipa5fox/Win11Debloat-zh)点一个。
-
-本项目中文化与少量适配遵循 [MIT 许可证](./LICENSE)，与上游一致。
+本项目遵循 [MIT 许可证](./LICENSE)，与上游一致。
