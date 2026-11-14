@@ -220,7 +220,7 @@ gh attestation verify Win11Debloat.zip --repo Swipa5fox/Win11Debloat-zh
 - **语言资源改为一次遍历建表**，不再每个键都重走一遍回退链
 - **应用列表名称列的共享宽度改为整表一次设置**，避免边加行边重算
 
-剩下这 3.7 秒花在哪：约 1 秒是 103 个脚本被逐个加载，约 1.5 秒是 WPF 解析界面文件，其余是窗口事件挂载与 100 多个功能项控件的创建。这是「纯脚本 + WPF」方案的固定成本，除非改成编译型程序，否则压不下去。
+剩下这 3.7 秒花在哪：约 1 秒是 87 个脚本被逐个加载，约 1.5 秒是 WPF 解析界面文件，其余是窗口事件挂载与 100 多个功能项控件的创建。这是「纯脚本 + WPF」方案的固定成本，除非改成编译型程序，否则压不下去。
 
 ## 语言与主题
 
@@ -263,7 +263,7 @@ git checkout -b sync/upstream-<日期> upstream/master
 
 1. **本仓库独有的文件**直接取回：`git checkout master -- Scripts/Features/Remove-WindowsDefender.ps1` 等 Defender 相关文件、`Config/Languages/*/Console.json`、`Assets/Images/*.png`
 2. **两边都改过的文件**逐个重放：`git diff <旧基线> master -- <文件> | git apply -3`，冲突处手工合
-3. **语言包**以上游为准，只把 `Console.json` 与 Defender 相关键补回去；补完跑一次覆盖检查，确认没有漏译的键
+3. **语言包**以上游为准，只把 `Console.json` 与 Defender 相关键补回去；补完跑 `.\Scripts\Run-Tests.ps1`，`Tests/ConsoleCatalog.Tests.ps1` 会挡住键缺失、占位符错位和未译句
 
 改完跑 `.\Scripts\Run-Tests.ps1`，全绿再提交。注意 `Import-LanguageFile.ps1` 一旦整份换成上游版，本仓库追加的 `Get-ConsoleText` 会一起消失，控制台前几百行输出会报「找不到命令」。
 
