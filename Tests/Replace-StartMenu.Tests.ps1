@@ -11,8 +11,10 @@ BeforeAll {
 Describe 'Get-StartMenuUserNameFromPath' {
     BeforeEach {
         Mock Write-Host {}
-        # Restore copies are named to the second; clear them so tests sharing $TestDrive cannot see each other's copy
-        Get-ChildItem -LiteralPath $TestDrive -Filter 'Win11Debloat-StartRestore-*.bak' | Remove-Item -Force
+        # Restore copies are named to the second; clear them so tests sharing $TestDrive cannot see each other's copy.
+        # Loop explicitly: an empty result piped into Remove-Item fails parameter binding under the suite's Stop preference.
+        Get-ChildItem -LiteralPath $TestDrive -Filter 'Win11Debloat-StartRestore-*.bak' |
+            ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }
     }
 
     It 'extracts a user name from a start-menu path and falls back for unknown paths' {

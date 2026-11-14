@@ -92,8 +92,18 @@ if ($text -notmatch [regex]::Escape($env:RELEASE_TAG)) { throw 'Tests did not se
             if ($args[0] -eq 'ls-remote' -and -not $script:gitAuthenticationConfigured) {
                 throw 'Git authentication must be configured before querying remote tags.'
             }
-            & $gitExecutable @args
+            # Git reports progress and ref summaries on stderr. With the suite's Stop preference a redirected
+            # native stderr record becomes terminating, so capture both streams and keep only stdout text.
+            $previousPreference = $ErrorActionPreference
+            $ErrorActionPreference = 'Continue'
+            try {
+                $output = @(& $gitExecutable @args 2>&1)
+            }
+            finally {
+                $ErrorActionPreference = $previousPreference
+            }
             $global:LASTEXITCODE = $LASTEXITCODE
+            $output | Where-Object { $_ -isnot [System.Management.Automation.ErrorRecord] }
         }
 
         # Real local Git commits/pushes; all GitHub operations stay inside this fixture.

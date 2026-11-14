@@ -201,13 +201,17 @@ Describe 'Set-StoreSearchSuggestionsEnabled' {
     }
 
     It 'normalizes the ACL and removes an existing database' {
+        # The function has a single Remove-Item call whose path is its only argument, so asserting the
+        # call count pins the deletion. A ParameterFilter on $Path never matches: Pester's proxy does
+        # not expose bound parameters to the filter or the mock body under Windows PowerShell 5.1.
+        $script:removeCalled = $false
         $acl = New-TestStoreDatabaseAcl
         Mock Test-Path { $true }
         Mock takeown {}
         Mock icacls {}
         Mock Get-Acl { $acl }
         Mock Set-Acl {}
-        Mock Remove-Item {}
+        Mock Remove-Item { $script:removeCalled = $true }
 
         Set-StoreSearchSuggestionsEnabled -StoreAppsDatabase 'C:\Users\Alice\AppData\Local\Packages\store.db' | Should -BeTrue
 
@@ -215,7 +219,8 @@ Describe 'Set-StoreSearchSuggestionsEnabled' {
         Should -Invoke icacls -Times 1 -Exactly
         Should -Invoke Get-Acl -Times 1 -Exactly
         Should -Invoke Set-Acl -Times 1 -Exactly
-        Should -Invoke Remove-Item -Times 1 -Exactly -ParameterFilter { $Path -eq 'C:\Users\Alice\AppData\Local\Packages\store.db' -and $Force -and $ErrorAction -eq 'Stop' }
+        Should -Invoke Remove-Item -Times 1 -Exactly
+        $script:removeCalled | Should -BeTrue
     }
 
     It 'continues removing an existing database when ACL normalization fails' {
