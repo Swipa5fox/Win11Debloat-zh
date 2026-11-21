@@ -67,7 +67,15 @@ Describe 'Shipped release version' {
     }
 
     It 'is not older than the newest reachable git tag' {
-        $latest = & git -C $script:repositoryRoot describe --tags --abbrev=0 2>$null
+        # A checkout without a reachable tag makes git write "No names found, cannot
+        # describe anything." to stderr. Under $ErrorActionPreference = 'Stop' PowerShell
+        # 5.1 promotes that stderr line to a terminating NativeCommandError, so probe from
+        # a child scope that silences it and let the exit code decide whether to skip.
+        $latest = & {
+            $ErrorActionPreference = 'SilentlyContinue'
+            & git -C $script:repositoryRoot describe --tags --abbrev=0 2>$null
+        }
+
         if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($latest)) {
             Set-ItResult -Skipped -Because 'no reachable tag in this checkout (shallow clone or fresh repository)'
             return
