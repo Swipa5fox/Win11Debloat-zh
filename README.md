@@ -2,7 +2,13 @@
 
 [Win11Debloat](https://github.com/Raphire/Win11Debloat) 的增强分支。上游是一个轻量、免安装的 PowerShell 脚本，用来清理 Windows 预装应用、关闭遥测、移除烦人的界面元素。
 
-这个仓库在上游基础上做了三件事：**全链路中文**（不只界面，控制台与日志也一起）、**彻底移除 Microsoft Defender**（上游不做的功能）、**更快的启动**。
+这个仓库在上游基础上做两件事：**全链路中文**（不只界面，控制台与日志也一起）、**彻底移除 Microsoft Defender**（上游不做的功能）。其余部分尽量贴着上游走，功能跟进以官方 Release 为准。
+
+| | 上游 Win11Debloat | 本仓库 |
+|---|---|---|
+| **界面语言** | 13 套语言包，含简体中文 | 同上，另校订约 160 条直译痕迹较重的文案 |
+| **控制台与日志** | 有 `Console.json` 机制，但没有任何数据，全英文 | 中文（351 条），按「当前语言 → 英文 → 原文」三级回退 |
+| **移除 Defender** | 不提供 | 独立模块：服务 / 驱动 / 注册表 / COM / 防火墙 / 计划任务 / 目录，另有残留自检 |
 
 > 基于上游 **2026.10.30** 版本整合，当前发布版 `v0.1.5.2`。
 
@@ -21,10 +27,6 @@
 上游自 2026.10 起自带简体中文界面包，但只到界面为止——控制台菜单、参数校验、执行进度、错误提示、写进 `Logs/` 的日志仍然是英文。本版补上了这一层：以英文原文为键的 `Console.json`（351 条），按「当前语言 → 英文 → 原文」三级回退，缺译不会冒出键名。
 
 界面在上游中文包基础上校订了约 160 条直译痕迹较重的文案，并补齐 Defender 与设置窗口相关的键。功能项、应用说明、分类标题全部可读，不需要边看边猜。
-
-### 三、启动更快
-
-`v0.1.5.1` 起把「双击到窗口可交互」从 **4.7 秒压到 3.7 秒**，应用列表就绪从 4.8 秒压到 4.2 秒。做法和剩余开销见 [性能](#性能) 一节。
 
 ## 界面预览
 
@@ -238,34 +240,35 @@ gh attestation verify Win11Debloat.zip --repo Swipa5fox/Win11Debloat-zh
 |---|---|
 | **彻底移除 Microsoft Defender** | 上游没有的功能：删除服务注册（含 `MsSec*` 平台驱动）、过滤与早期启动驱动、策略与配置键、Shell/COM/WinRT 注册、`WebThreatDefense` 主机组、开机启动项、防火墙规则、任务与目录，不可撤销。入口是主窗口独立的「Windows Defender」页与 `-RemoveWindowsDefender`，带 `REMOVE` 输入确认；另有只读的 `-VerifyDefenderRemoval` 自查入口 |
 | **控制台与日志中文包** | 上游的 `Console.json` 机制没有任何数据文件，控制台与日志全是英文。本仓库补了 `zh-CN/Console.json`（351 条）与 `en-US/Console.json` 基线，按「英文原文 → 译文」映射，缺译回退原文 |
-| **启动性能** | 首帧 4.7 秒 → 3.7 秒，应用列表 4.8 秒 → 4.2 秒（延迟 Defender 扫描、延迟状态读取、语言资源一次建表、列表列宽整表设置） |
+| 启动路径微调 | 首帧 4.7 秒 → 3.7 秒，应用列表 4.8 秒 → 4.2 秒（延迟 Defender 扫描、延迟状态读取、语言资源一次建表、列表列宽整表设置）。剩下的开销是「纯脚本 + WPF」的固定成本，不作为卖点 |
 | 界面文案校订 | 在上游中文包基础上补了 Defender 与设置窗口相关键，并按中文表达习惯重写了约 160 条直译痕迹较重的文案 |
 | 非管理员自动提权 | 不再询问 `y/n`，直接请求 UAC（上游需手动确认） |
 | 一键脚本下载本仓库发布版 | `Scripts/Get.ps1` 默认取本仓库最新 Release 的 `Win11Debloat.zip`，并用同批发布的 `SHA256SUMS` 校验；`-Dev` 仍指向上游开发分支 |
 | `Run.bat` 中英文分流 | 按 `LocaleName` 判断，中文系统显示中文提示 |
 | 反馈入口指向本仓库 | `Run.bat` 的 issue 提示、主窗口「反馈问题」菜单、应用失败时的上报按钮，均指向本仓库 issues（上游 Wiki 链接保留，因为说明文档仍在上游） |
 | 彻底移除不写入预设 | `LastUsedSettings.json` 会排除 Defender 移除，「使用上次设置」不会重放这个不可逆操作 |
-| 历史已重写 | 本仓库与上游没有共同祖先，贡献者统计只保留本仓库的提交。同步方式见下一节 |
+| 保留上游完整历史 | 本仓库带上游提交历史一起发布，与上一次跟进的上游 Release 有共同祖先，可以直接 `git merge upstream/master`。同步方式见下一节 |
 
 ## 同步上游更新
 
-上游与本仓库没有共同祖先（历史已重写），所以不要 `git merge`，按「以上游为新基线、重放本地增量」的方式同步：
+本仓库保留了上游的提交历史，与上一次跟进的上游 Release（`5d88bfe`，2026.10.30）有共同祖先，正常合并即可：
 
 ```PowerShell
 git remote add upstream https://github.com/Raphire/Win11Debloat.git
 git fetch upstream --no-tags
-git checkout -b sync/upstream-<日期> upstream/master
+git merge upstream/master
 ```
 
 `--no-tags` 是必要的：本仓库只保留自己的版本标签（`v0.1.x`），加上它上游那几十个日期标签才不会被顺手拉进来。
 
-分支建好后按三类处理：
+冲突集中在两类文件：
 
-1. **本仓库独有的文件**直接取回：`git checkout master -- Scripts/Features/Remove-WindowsDefender.ps1` 等 Defender 相关文件、`Config/Languages/*/Console.json`、`Assets/Images/*.png`
-2. **两边都改过的文件**逐个重放：`git diff <旧基线> master -- <文件> | git apply -3`，冲突处手工合
-3. **语言包**以上游为准，只把 `Console.json` 与 Defender 相关键补回去；补完跑 `.\Scripts\Run-Tests.ps1`，`Tests/ConsoleCatalog.Tests.ps1` 会挡住键缺失、占位符错位和未译句
+1. **本仓库独有的文件**：Defender 相关脚本、`Config/Languages/*/Console.json`、`Assets/Images/*.png`。上游不碰它们，冲突时保留本地内容；`Assets/Images/` 万一被上游整目录覆盖，同步后要重拍预览图
+2. **两边都改过的文件**（当前 74 个）：以上游为骨架逐块重放本地改动，不要整份覆盖
 
-改完跑 `.\Scripts\Run-Tests.ps1`，全绿再提交。注意 `Import-LanguageFile.ps1` 一旦整份换成上游版，本仓库追加的 `Get-ConsoleText` 会一起消失，控制台前几百行输出会报「找不到命令」。
+**语言包以上游为准**，只把 `Console.json` 与 Defender 相关键补回去。
+
+合并完跑 `.\Scripts\Run-Tests.ps1`，全绿再提交推送。注意 `Import-LanguageFile.ps1` 一旦整份换成上游版，本仓库追加的 `Get-ConsoleText` 会一起消失，控制台前几百行输出会报「找不到命令」。
 
 ## Q&A
 
@@ -299,7 +302,7 @@ A：不会。整个东西就是本地跑的 PowerShell + WPF，没有遥测、�
 
 **Q：既然上游也支持中文，这个仓库和上游到底差在哪？**
 
-A：三处：**上游没有的 Defender 移除模块**、**覆盖控制台与日志的中文包**（上游有机制、零数据）、**启动性能优化**。逐条对照在上面「与上游的差异」表里。
+A：两处：**上游没有的 Defender 移除模块**、**覆盖控制台与日志的中文包**（上游有机制、零数据）。启动路径也调过一轮（首帧 4.7 秒 → 3.7 秒），但剩下的是 WPF 方案的固定成本，不拿它当卖点。逐条对照在上面「与上游的差异」表里。
 
 ## 致谢
 
@@ -309,7 +312,6 @@ A：三处：**上游没有的 Defender 移除模块**、**覆盖控制台与日
 
 - **彻底移除 Microsoft Defender**——从服务注册、`MsSec*` 平台驱动、过滤与早期启动驱动，到 Shell / COM / WinRT 注册、`WebThreatDefense` 主机组、防火墙规则、计划任务、程序目录，加上残留检测和只读自查 `-VerifyDefenderRemoval`。连「删到一半中断了怎么补刀」「属主是 TrustedInstaller 时怎么夺权」都是自己踩出来的
 - **控制台与日志中文包**（351 条）——上游有 `Console.json` 的机制，却一条数据都没写
-- **启动性能**——首帧从 4.7 秒降到 3.7 秒
 - 一键脚本、自动提权、反馈入口这些适配
 
 用得顺手的话，Star 给[上游仓库](https://github.com/Raphire/Win11Debloat)——真正干活的是他们；觉得 Defender 模块和中文输出有用，也欢迎给[这个仓库](https://github.com/Swipa5fox/Win11Debloat-zh)点一个。
