@@ -128,6 +128,12 @@ $script:LanguagesPath = Join-Path (Join-Path $PSScriptRoot 'Config') 'Languages'
 # requested language isn't available.
 $script:Lang = if ($Language) { Import-LanguageFile -LanguageCode $Language } else { Import-LanguageFile }
 
+# Console messages reach the user through Write-Host. Translating at that single choke point keeps
+# the upstream scripts free of per-call Get-ConsoleText wrappers, so they stay byte-identical to
+# upstream and never become a merge conflict on the next sync.
+. "$PSScriptRoot/Scripts/FileIO/Console-Overlay.ps1"
+Initialize-ConsoleOverlay -LanguagesPath $script:LanguagesPath -Lang $script:Lang
+
 # Win11Debloat depends on Windows PowerShell 5.1 cmdlets (the Appx module's Get-AppxPackage /
 # Remove-AppxPackage, and Get-ComputerRestorePoint) that do not load in PowerShell 7 (pwsh), where the
 # Appx module fails with "Operation is not supported on this platform" (0x80131539). Without this guard
