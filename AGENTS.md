@@ -7,13 +7,12 @@
 
 ## 1. 项目定位
 
-上游 [`Raphire/Win11Debloat`](https://github.com/Raphire/Win11Debloat) 的中文增强分支。在上游基础上只做三件事：
+上游 [`Raphire/Win11Debloat`](https://github.com/Raphire/Win11Debloat) 的中文增强分支。在上游基础上只做两件事：
 
 1. **彻底移除 Microsoft Defender** —— 上游从不做的功能，不可逆
 2. **全链路中文** —— 界面之外，控制台与日志也有中文（`Config/Languages/*/Console.json`，351 条）
-3. **启动性能优化** —— 首帧 4.7s → 3.7s
 
-定位是「中文增强版」不是「汉化版」：README、仓库简介、topics 都按上面三件事讲，界面校订只占一小段。
+定位是「中文增强版」不是「汉化版」：README、仓库简介、topics 都按上面两件事讲，界面校订只占一小段。启动性能（4.7s → 3.7s）是附带结果，不作卖点，数据见 §9。
 
 本地汉化规模：Chrome 386 / Features 105 / Apps 162 / Categories 12 / Console 351 = 1016 条。
 
@@ -31,8 +30,8 @@ README 顶部用**三行对比表**（界面语言 / 控制台与日志 / 移除
 | 上游日期版本 | `$script:Version = "2026.10.31"` |
 | 上游基线 commit | `5d88bfe`（2026.10.30 Release） |
 | 测试基线 | **1049 passed / 0 failed**，约 90–120 秒 |
-| 相对上游差异 | 约 75 文件（含本文件与 `Docs/`） |
-| 历史 | 599 提交，与上游**有共同祖先**，可直接 merge / rebase |
+| 相对上游差异 | 73 文件 / +5558 / −1517 |
+| 历史 | 605 提交，与上游**有共同祖先**，可直接 merge / rebase |
 
 数字会变。**以实跑为准**：`.\Scripts\Run-Tests.ps1`、`git diff --stat 5d88bfe HEAD`。
 
@@ -47,7 +46,8 @@ Scripts/
   Run-Tests.ps1 / Build-Release.ps1 / Set-ReleaseVersion.ps1
   AppRemoval/             应用移除（含强制卸载 Edge）
   CLI/                    控制台菜单与输出
-  Features/               Invoke-Changes（总执行器）、Remove-WindowsDefender、注册表应用/备份/还原
+  Features/               Invoke-Changes（总执行器）、注册表应用/备份/还原
+  Defender/               Windows-Defender.ps1：Defender 移除 + 确认对话框 + 主窗口页面（自包含，37 个函数）
   FileIO/                 JSON / 语言 / 设置读写，Console-Overlay（控制台翻译层）
   GUI/                    MainWindow-* 分页、各弹窗
   Helpers/                注册表路径、用户目录、构建判定等
@@ -72,7 +72,7 @@ Docs/                     设计参考文档
 | `Run.bat` 必须存 **GBK** | cmd 按 OEM 码页解析批处理 |
 | 语言 JSON 必须 **UTF-8 无 BOM** | 有 BOM 会出现乱码字 |
 | JSON 读取必须 `-Encoding UTF8` | 否则中文乱码 |
-| 新增 GUI 脚本 → 加进 `Tests/XamlContracts.Tests.ps1` 的 `$receiverSchemas` | 否则 FindName 契约测试挂 |
+| 新增 GUI 脚本 → 加进 `Tests/XamlContracts.Tests.ps1` 的 `$receiverSchemas` | 否则 FindName 契约测试挂；扫描范围是 `Scripts/GUI` + `Scripts/Defender` |
 | 新增开关 → 同步加进 `Scripts/Get.ps1` | 否则 `FeatureParameterContracts` 挂 |
 | 语言包复数键 `_one` / `_other` 必须成对 | 中文两者填同一文本，`{0}`/`{1}` 与英文一一对应 |
 | 版本号只改一行：`.\Scripts\Set-ReleaseVersion.ps1 -Tag v0.1.x` | 它保留 BOM、不碰 `$script:Version`；版本按微版本走 |
@@ -116,6 +116,9 @@ git merge upstream/master      # 或 rebase
 - Pester 5.9 + PS 5.1 的 `-ParameterFilter` 拿不到绑定参数：`Should -Invoke X -ParameterFilter { $Path -eq '...' }` 与 mock body 里的 `$Path` 都是 `$null`，断言静默失败。改为断言调用次数 + 用 `$script:` 变量标记是否进入 mock
 - 空目录用管道喂 `Remove-Item` 会参数绑定失败（`missing path operand`）→ 改 `| ForEach-Object { Remove-Item -LiteralPath $_.FullName -Force }`
 - git 原生命令写 stderr，在 `$ErrorActionPreference='Stop'` 下会抛 `NativeCommandError`：`git describe --tags --abbrev=0` 在无 tag 时 `2>$null` 挡不住，测试的 skip 分支永远走不到。要在子作用域 `& { $ErrorActionPreference='SilentlyContinue'; ... }` 里调用，用 `$LASTEXITCODE` 判断是否 skip
+- `Tests/XamlContracts.Tests.ps1` 只扫代码里写死的目录（`Scripts/GUI`，2026-11-21 起加 `Scripts/Defender`）：把 GUI 代码移出这两个目录，FindName 契约会**静默失效**，必须同步加扫描路径
+- `$receiverSchemas` 是哈希表：`Window` 与 `window` 是同一个键，写两个会直接解析失败（`哈希文本中不允许包含重复的键`）
+- `-VerifyDefenderRemoval` 的退出码只能在 `-File` 直跑时取：用 `*>&1 | Out-File` 包一层再读 `$LASTEXITCODE` 得到的是 0，别拿它判验收
 
 **构建与脚本**
 - PowerShell 里 `Remove-Item -Recurse` 会被 safe-delete 钩子拦成 fail-closed（`SAFE_DELETE_FAIL_CLOSED ... trash-failed`），且报错后同一 `-Command` 的后续语句仍会执行，极易判错因果。构建前用 bash `rm -rf` + `mkdir` 备空目录；`Build-Release.ps1` 见同名文件就 `throw`，重跑必须换目录
@@ -133,6 +136,7 @@ git merge upstream/master      # 或 rebase
 
 详情与外部参考见 [`Docs/Defender-Removal-Reference.md`](./Docs/Defender-Removal-Reference.md)。要点：
 
+- **代码全在一个文件**：`Scripts/Defender/Windows-Defender.ps1`（37 个函数，2026-11-21 由 `Features/Remove-WindowsDefender.ps1` + `GUI/Confirm-DefenderRemoval.ps1` + `GUI/MainWindow-Defender.ps1` 合并）。上游文件只剩调用点：`Show-MainWindow` 5 行、`MainWindow-Deployment` 1 行、`Invoke-Changes` 两个 switch case；同步上游时这几处是唯一可能冲突的地方
 - 入口：主窗口「Windows Defender」页 + `-RemoveWindowsDefender`；无人值守需 `-AcceptDefenderRemovalRisk`；只读自查 `-VerifyDefenderRemoval`（**免管理员免 UAC**）
 - 执行顺序：导出注册表 → 还原点 → 停服务 → 删任务 → 删服务键 → 删驱动 → 删配置/外壳/COM/WinRT 键 → 启动项 → 防火墙规则 → 目录
 - **服务清单必须扫 ImagePath 指向 Defender 目录**，别只硬编码（新版有 `MpDefenderCoreService` 锁着 `MpClient.dll`）
@@ -150,7 +154,7 @@ git merge upstream/master      # 或 rebase
 
 - 标签顺序：0 首页 → 1 应用 → 2 优化 → 3 Defender → 4 部署。标签头 Collapsed，用户靠「上一步/下一步」翻页 → **新页必须插在部署页之前**
 - 禁止硬编码 `$tabControl.SelectedIndex = 3`，用 `Select-DeploymentTab` 按 `x:Name` 选；`Update-NavigationButtons` 第 3 个点判 `-ge (totalTabs-1)`
-- Defender 复选框不走 `UiControlMappings` → apply 时手动 `Add-Parameter`、`New-Overview` 补行、`Clear-TweakSelections` 取消勾选
+- Defender 复选框不走 `UiControlMappings` → 全部由 `Scripts/Defender/Windows-Defender.ps1` 的 hook 处理：`Add-DefenderModuleToParams` 加参数、`Test-DefenderModuleSelected` 给 New-Overview 补行、`Reset-DefenderModuleSelection` 取消勾选；页面初始化是 `Initialize-DefenderModule`，首次翻到该页才扫状态（`Update-DefenderModuleOnPageEnter`）
 - XAML 本地化值经 `ConvertTo-LocalizedXaml` 用 `SecurityElement.Escape` 转义，`&`/`<` 不用手写实体
 
 ---
@@ -161,7 +165,7 @@ git merge upstream/master      # 或 rebase
 
 已处理：`Get-DefenderResidue` 延迟到首次打开该页（约 5s）、`Get-MpComputerStatus` 加存在性守卫（无 Defender 时 CIM 重试约 6s）、`Set-CurrentTweakStateInUi` 挪到首帧后（520ms）、语言资源一次建表（450ms）。
 
-压不动的固定成本：`XamlReader.Load` ≈990ms（不是本地化，`ConvertTo-LocalizedXaml` 只占 60ms）、87 个脚本 dot-source ≈1.0s。`New-DynamicTweakControls`（403ms）**故意保留同步**——控件必须存在，大量路径 FindName。
+压不动的固定成本：`XamlReader.Load` ≈990ms（不是本地化，`ConvertTo-LocalizedXaml` 只占 60ms）、86 个脚本 dot-source ≈1.0s。`New-DynamicTweakControls`（403ms）**故意保留同步**——控件必须存在，大量路径 FindName。
 
 已验证无效/负优化：窗口显示前预加载应用数据（+0.75s，已回退）、调大批次 / 减少 Dispatcher 泵送（非瓶颈）。
 
