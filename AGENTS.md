@@ -98,6 +98,7 @@ git merge upstream/master      # 或 rebase
 1. `grep 'function Get-ConsoleText'` 只应出现在 `Scripts/Get.ps1`、`Scripts/Run-Tests.ps1`
 2. `Assets/Images/` 会被上游整目录覆盖 → 重拍预览图
 3. `Scripts/FileIO/Console-Overlay.ps1` 仍在（它承载整个控制台汉化）
+4. 语言包校订**不要提 PR 给上游**：2026-11-21 对 `3d8feef` 做过键集 / 占位符 / 未译 / 方向词四轮审计，上游 zh-CN 没有客观误译，我们那 333 条改写基本是措辞偏好（「恢复」vs「还原」这类），提了只是噪音。将来真遇到客观错（占位符丢 `{0}`、把 disable 译成启用、整句漏译）再单独提
 
 ---
 
