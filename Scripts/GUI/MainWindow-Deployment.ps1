@@ -138,8 +138,7 @@ function New-Overview {
     }
 
     # The Defender module's checkbox lives on its own page, so it is not part of the tweak mappings.
-    $defenderRemoveCheckBox = $Window.FindName('DefenderRemoveCheckBox')
-    if ($defenderRemoveCheckBox -and $defenderRemoveCheckBox.IsChecked -eq $true) {
+    if (Test-DefenderModuleSelected -Window $Window) {
         $changesList += Get-Translation -Key 'DefenderModuleChangeRemove'
     }
 

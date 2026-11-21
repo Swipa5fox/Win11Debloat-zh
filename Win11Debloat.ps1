@@ -461,13 +461,11 @@ if (-not $script:WingetInstalled -and -not $Silent) {
 . "$PSScriptRoot/Scripts/GUI/MainWindow-AppSelection.ps1"
 . "$PSScriptRoot/Scripts/GUI/MainWindow-TweaksBuilder.ps1"
 . "$PSScriptRoot/Scripts/GUI/MainWindow-Navigation.ps1"
-. "$PSScriptRoot/Scripts/GUI/MainWindow-Defender.ps1"
+. "$PSScriptRoot/Scripts/Defender/Windows-Defender.ps1"
 . "$PSScriptRoot/Scripts/GUI/MainWindow-Deployment.ps1"
 . "$PSScriptRoot/Scripts/GUI/Show-MainWindow.ps1"
 . "$PSScriptRoot/Scripts/GUI/Show-AboutDialog.ps1"
 . "$PSScriptRoot/Scripts/GUI/Show-Bubble.ps1"
-. "$PSScriptRoot/Scripts/Features/Remove-WindowsDefender.ps1"
-. "$PSScriptRoot/Scripts/GUI/Confirm-DefenderRemoval.ps1"
 
 # Helper functions
 . "$PSScriptRoot/Scripts/Helpers/Add-Parameter.ps1"

@@ -169,11 +169,6 @@ function Show-MainWindow {
     $homeStartBtn = $window.FindName('HomeStartBtn')
     $homeDefaultModeBtn = $window.FindName('HomeDefaultModeBtn')
 
-    # ---- Windows Defender module ----
-    $defenderRemoveCheckBox = $window.FindName('DefenderRemoveCheckBox')
-    $defenderRefreshBtn = $window.FindName('DefenderRefreshBtn')
-    $defenderVerifyBtn = $window.FindName('DefenderVerifyBtn')
-
     # ---- Wire export/import ----
     $exportConfigBtn.Add_Click({
         try {
@@ -227,8 +222,6 @@ function Show-MainWindow {
     $script:IsLoadingApps = $false
     $script:PendingDefaultMode = $false
     $script:PreloadedAppData = $null
-    # The Defender status is only read once the module page is opened; see the tab change handler.
-    $script:DefenderStatusLoaded = $false
     $script:UpdatingPresets = $false
     $script:UpdatingTweakPresets = $false
     $script:SortColumn = 'Name'
@@ -664,12 +657,7 @@ function Show-MainWindow {
     })
 
     # ---- Windows Defender module ----
-    if ($defenderRefreshBtn) {
-        $defenderRefreshBtn.Add_Click({ Update-DefenderModule -Window $window })
-    }
-    if ($defenderVerifyBtn) {
-        $defenderVerifyBtn.Add_Click({ Show-DefenderModuleVerification -Window $window })
-    }
+    Initialize-DefenderModule -Window $window
 
     # ---- Apply Changes button ----
     $deploymentApplyBtn.Add_Click({
@@ -715,12 +703,8 @@ function Show-MainWindow {
         }
 
         # The Defender module has its own page, so its checkbox is not part of the dynamic tweak
-        # controls. It joins the parameter set here, before the no-changes check and before the
-        # irreversible-removal confirmation runs.
-        if ($defenderRemoveCheckBox -and $defenderRemoveCheckBox.IsChecked -eq $true) {
-            Add-Parameter 'RemoveWindowsDefender'
-            $null = $selectedForwardFeatureIds.Add('RemoveWindowsDefender')
-        }
+        # controls. It joins the parameter set here, before the no-changes check runs.
+        Add-DefenderModuleToParams -Window $window -SelectedFeatureIds $selectedForwardFeatureIds
 
         if (-not $hasAppSelection -and $selectedForwardFeatureIds.Count -eq 0 -and $script:UndoParams.Count -eq 0) {
             Show-MessageBox -Message (Get-Translation -Key 'NoChangesSelectedMessage') -Title (Get-Translation -Key 'NoChangesSelectedTitle') -Button 'OK' -Icon 'Information'
@@ -774,7 +758,7 @@ function Show-MainWindow {
             $ShowCurrentlyAppliedTweaksCheckBox.IsChecked = $false
         }
         Clear-TweakSelections -Window $window
-        if ($defenderRemoveCheckBox) { $defenderRemoveCheckBox.IsChecked = $false }
+        Reset-DefenderModuleSelection -Window $window
         Update-TweakPresetStates -Window $window
     })
 
@@ -784,12 +768,6 @@ function Show-MainWindow {
             & $updateHomeContentPosition
             New-DynamicTweakControls -Window $window -WinVersion $WinVersion
             Update-TweaksResponsiveColumns -Window $window
-
-            # The Defender status scans services, policy keys, drivers and firewall rules, which costs
-            # seconds on a machine that already lost the WMI provider. Nobody is looking at that page
-            # at startup, so the scan runs the first time the page is opened instead.
-            $defenderStateText = $window.FindName('DefenderStateText')
-            if ($defenderStateText) { $defenderStateText.Text = '' }
 
             $lastUsedSettingsJson = Import-JsonFile -filePath $script:SavedSettingsFilePath -expectedVersion "1.0" -optionalFile
             $defaultsJson = Import-JsonFile -filePath $script:DefaultSettingsFilePath -expectedVersion "1.0"
@@ -866,16 +844,7 @@ function Show-MainWindow {
     # ---- Tab change event ----
     $tabControl.Add_SelectionChanged({
         Invoke-NavigationUpdate
-
-        # First visit to the Defender page: show a placeholder, then scan once the page has painted.
-        if (-not $script:DefenderStatusLoaded -and $tabControl.SelectedItem -eq $window.FindName('DefenderTab')) {
-            $script:DefenderStatusLoaded = $true
-            $defenderStateText = $window.FindName('DefenderStateText')
-            if ($defenderStateText) { $defenderStateText.Text = Get-Translation -Key 'DefenderStatusChecking' }
-            $window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
-                Update-DefenderModule -Window $window
-            }) | Out-Null
-        }
+        Update-DefenderModuleOnPageEnter -Window $window -TabControl $tabControl
     })
 
     # ---- Tweak presets wiring ----

@@ -12,8 +12,7 @@ BeforeAll {
         return $Text
     }
 
-    . (Join-Path $PSScriptRoot '..\Scripts\Features\Remove-WindowsDefender.ps1')
-    . (Join-Path $PSScriptRoot '..\Scripts\GUI\Confirm-DefenderRemoval.ps1')
+    . (Join-Path $PSScriptRoot '..\Scripts\Defender\Windows-Defender.ps1')
 
     $script:Params = @{}
     $script:GuiWindow = $null

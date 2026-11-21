@@ -1,4 +1,19 @@
-﻿<#
+﻿# Windows-Defender.ps1
+# Self-contained Microsoft Defender removal module for the Chinese edition.
+#
+# Everything the feature needs lives in this one file so upstream scripts only carry three small
+# hooks: the page initialisation in Show-MainWindow, the feature dispatch cases in Invoke-Changes and
+# the overview row in MainWindow-Deployment. Keeping it in one file means an upstream sync never has
+# to merge removal, confirmation and page code separately.
+#
+# Sections, in order:
+#   1. preflight and residue probes
+#   2. registry / ownership / service deletion primitives
+#   3. target enumeration and the removal pipeline
+#   4. read-only report (console and GUI)
+#   5. confirmation dialog (GUI and console)
+#   6. main window page: status block, leftover report, selection + confirmation hooks
+<#
     .SYNOPSIS
         Tests whether the current process is elevated.
 
@@ -1268,4 +1283,516 @@ function Invoke-RemoveWindowsDefender {
     }
 
     return $serviceGone
+}
+
+
+<#
+    .SYNOPSIS
+        Confirms that the user really wants Microsoft Defender Antivirus removed.
+
+    .DESCRIPTION
+        Removal cannot be undone from this tool, so a single Yes/No click is not enough. The GUI path
+        shows a dedicated dialog listing the consequences and only accepts the typed word REMOVE; the
+        console path does the same through Read-Host. Unattended runs have to opt in explicitly with
+        -AcceptDefenderRemovalRisk, otherwise the feature is skipped instead of silently applied.
+
+        Preconditions are checked first: tamper protection, a missing Defender, or a missing third-party
+        antivirus are reported before the user is asked to type anything, so nobody confirms a removal
+        that would fail halfway.
+
+    .OUTPUTS
+        System.Boolean. $true when the removal may proceed.
+#>
+function Confirm-DefenderRemoval {
+    # Deliberately untyped: the console path runs before the WPF assemblies are loaded, where a
+    # [System.Windows.Window] parameter type fails to resolve and turns the whole function definition
+    # into a TypeNotFound error.
+    param(
+        $Owner = $null
+    )
+
+    $preflight = Get-DefenderRemovalPreflight
+
+    # Hard blockers: Defender is protected, absent, or we are not elevated.
+    if ($preflight.Blockers.Count -gt 0) {
+        foreach ($blocker in $preflight.Blockers) {
+            Write-Warning (Get-ConsoleText "Cannot remove Microsoft Defender Antivirus: {0}" -FormatArgs @($blocker))
+        }
+        if ($preflight.TamperProtected -and $script:GuiWindow) {
+            Show-MessageBox -Message (Get-ConsoleText "Tamper protection is on. Turn it off in Windows Security under Virus & threat protection > Manage settings, then run this again.") `
+                -Title (Get-Translation -Key 'DefenderRemovalConfirmTitle') -Button 'OK' -Icon 'Warning' -Owner $Owner | Out-Null
+        }
+        return $false
+    }
+
+    $unprotectedWarning = ''
+    if ($preflight.IsUnprotected) {
+        $unprotectedWarning = Get-ConsoleText "No third-party antivirus is registered. After this runs, nothing on this machine will scan files, and Windows Security will report that no antivirus is active."
+        Write-Warning $unprotectedWarning
+    }
+    else {
+        Write-Host (Get-ConsoleText "Third-party antivirus detected, it keeps protecting this machine after Defender is gone: {0}" -FormatArgs @(($preflight.ThirdPartyAntivirus -join ', ')))
+    }
+
+    # ---- Console path ----
+    if (-not $script:GuiWindow -or -not (Test-Path -LiteralPath $script:DefenderRemovalConfirmSchema)) {
+        Write-Host ""
+        Write-Host (Get-ConsoleText "Microsoft Defender Antivirus will be permanently removed:") -ForegroundColor Red
+        Write-Host (Get-ConsoleText "  - services, filter/ELAM drivers, policies, scheduled tasks and program folders are deleted") -ForegroundColor Red
+        Write-Host (Get-ConsoleText "  - this cannot be undone from this tool; recovery needs an in-place upgrade or a clean install") -ForegroundColor Red
+        Write-Host (Get-ConsoleText "  - a Windows feature upgrade will bring Defender back and the removal has to be repeated") -ForegroundColor Red
+        if ($unprotectedWarning) {
+            Write-Host (Get-ConsoleText "  - no third-party antivirus detected: the machine will be left without an on-access scanner") -ForegroundColor Red
+        }
+        Write-Host ""
+
+        $answer = Read-Host (Get-ConsoleText "Type REMOVE to continue, or press Enter to skip")
+        return ([string]$answer).Trim() -eq 'REMOVE'
+    }
+
+    # ---- GUI path ----
+    Add-Type -AssemblyName PresentationFramework,PresentationCore,WindowsBase | Out-Null
+    $usesDarkMode = Get-SystemUsesDarkMode
+    $ownerWindow = if ($Owner) { $Owner } else { $script:GuiWindow }
+
+    $overlay = $null
+    $overlayWasAlreadyVisible = $false
+    if ($ownerWindow) {
+        try {
+            $overlay = $ownerWindow.FindName('ModalOverlay')
+            if ($overlay) {
+                $overlayWasAlreadyVisible = ($overlay.Visibility -eq 'Visible')
+                if (-not $overlayWasAlreadyVisible) {
+                    $ownerWindow.Dispatcher.Invoke([action]{ $overlay.Visibility = 'Visible' })
+                }
+            }
+        }
+        catch { }
+    }
+
+    try {
+        $xaml = ConvertTo-LocalizedXaml -Xaml (Get-Content -Path $script:DefenderRemovalConfirmSchema -Raw)
+        $reader = [System.Xml.XmlReader]::Create([System.IO.StringReader]::new($xaml))
+        try {
+            $dialog = [System.Windows.Markup.XamlReader]::Load($reader)
+        }
+        finally {
+            $reader.Close()
+        }
+
+        if ($ownerWindow) {
+            try { $dialog.Owner = $ownerWindow } catch { }
+        }
+
+        Set-WindowThemeResources -window $dialog -usesDarkMode $usesDarkMode
+
+        $bodyText = $dialog.FindName('BodyText')
+        $promptText = $dialog.FindName('PromptText')
+        $input = $dialog.FindName('ConfirmInput')
+        $cancelButton = $dialog.FindName('CancelButton')
+        $removeButton = $dialog.FindName('RemoveButton')
+        $titleBar = $dialog.FindName('TitleBar')
+        $iconText = $dialog.FindName('IconText')
+
+        $iconText.Foreground = $dialog.FindResource('IconErrorColor')
+
+        $bodyLines = @(
+            (Get-ConsoleText "- Services, filter and early-launch drivers, policies, scheduled tasks and program folders are deleted."),
+            (Get-ConsoleText "- This cannot be undone from this tool. Recovery requires an in-place upgrade or a clean install."),
+            (Get-ConsoleText "- A Windows feature upgrade reinstalls Defender, so the removal has to be repeated afterwards."),
+            (Get-ConsoleText "- Windows Security will report that no antivirus is active.")
+        )
+        if (-not $preflight.IsUnprotected) {
+            $bodyLines += (Get-ConsoleText "- Third-party antivirus stays active: {0}." -FormatArgs @(($preflight.ThirdPartyAntivirus -join ', ')))
+        }
+        $bodyText.Text = ($bodyLines -join "`r`n`r`n")
+
+        $input.Text = ''
+        $input.Focus() | Out-Null
+
+        $cancelButton.Add_Click({ $dialog.Tag = 'Cancel'; $dialog.Close() })
+        $removeButton.Add_Click({
+            if ($input.Text.Trim() -eq 'REMOVE') {
+                $dialog.Tag = 'Confirm'
+                $dialog.Close()
+            }
+            else {
+                $input.BorderBrush = $dialog.FindResource('IconErrorColor')
+                $input.SelectAll()
+                $input.Focus() | Out-Null
+            }
+        })
+        $input.Add_KeyDown({
+            param($sender, $e)
+            if ($e.Key -eq 'Enter') {
+                if ($input.Text.Trim() -eq 'REMOVE') {
+                    $dialog.Tag = 'Confirm'
+                    $dialog.Close()
+                }
+                else {
+                    $input.BorderBrush = $dialog.FindResource('IconErrorColor')
+                }
+            }
+        })
+        $titleBar.Add_MouseLeftButtonDown({ $dialog.DragMove() })
+        $dialog.Add_KeyDown({
+            param($sender, $e)
+            if ($e.Key -eq 'Escape') {
+                $dialog.Tag = 'Cancel'
+                $dialog.Close()
+            }
+        })
+
+        $dialog.ShowDialog() | Out-Null
+        return ($dialog.Tag -eq 'Confirm')
+    }
+    catch {
+        Write-Warning (Get-ConsoleText "The confirmation dialog could not be shown: {0}" -FormatArgs @($_.Exception.Message))
+        return $false
+    }
+    finally {
+        if ($overlay -and -not $overlayWasAlreadyVisible) {
+            try { $ownerWindow.Dispatcher.Invoke([action]{ $overlay.Visibility = 'Collapsed' }) } catch { }
+        }
+    }
+}
+
+
+<#
+    .SYNOPSIS
+        Runs the Defender removal confirmation when the feature is selected, and drops the feature when
+        the user declines.
+
+    .DESCRIPTION
+        Called once before the apply phase, from both the GUI and the CLI, so the confirmation never
+        runs inside the background apply runspace that owns the progress modal.
+
+    .OUTPUTS
+        System.Boolean. $false when the feature was dropped because the user declined.
+#>
+function Confirm-DefenderRemovalIfSelected {
+    # Untyped for the same reason as Confirm-DefenderRemoval: the CLI path has no WPF assemblies loaded.
+    param(
+        $Owner = $null
+    )
+
+    if (-not $script:Params.ContainsKey('RemoveWindowsDefender')) { return $true }
+    if ($script:DefenderRemovalConfirmed) { return $true }
+
+    # Registry export and restore points still make sense in WhatIf, and nothing gets deleted there.
+    if ($script:Params.ContainsKey('WhatIf')) {
+        $script:DefenderRemovalConfirmed = $true
+        return $true
+    }
+
+    if ($script:Params.ContainsKey('AcceptDefenderRemovalRisk')) {
+        $script:DefenderRemovalConfirmed = $true
+        return $true
+    }
+
+    if ($script:Params.ContainsKey('Silent')) {
+        Write-Warning (Get-ConsoleText "Microsoft Defender Antivirus removal was skipped: unattended runs must pass -AcceptDefenderRemovalRisk to confirm it.")
+        $script:Params.Remove('RemoveWindowsDefender')
+        return $false
+    }
+
+    if (Confirm-DefenderRemoval -Owner $Owner) {
+        $script:DefenderRemovalConfirmed = $true
+        return $true
+    }
+
+    Write-Host (Get-ConsoleText "Microsoft Defender Antivirus removal was skipped.") -ForegroundColor Yellow
+    $script:Params.Remove('RemoveWindowsDefender')
+    return $false
+}
+
+
+<#
+    .SYNOPSIS
+        Refreshes the Defender module's status block from the live machine state.
+
+    .DESCRIPTION
+        The module is the only place where Defender is handled in the GUI, so the status has to answer
+        the three questions the removal depends on: is Defender still installed (or only residue),
+        is tamper protection blocking the removal, and is a third-party antivirus registered. The
+        removal checkbox is disabled when nothing is left, because a run would be refused up front.
+
+    .PARAMETER Window
+        The main window that owns the module controls.
+#>
+function Update-DefenderModule {
+    param([System.Windows.Window]$Window)
+
+    $stateText = $Window.FindName('DefenderStateText')
+    $protectionText = $Window.FindName('DefenderProtectionText')
+    $antivirusText = $Window.FindName('DefenderAntivirusText')
+    $removeCheckBox = $Window.FindName('DefenderRemoveCheckBox')
+    if (-not $stateText) { return }
+
+    $errorBrush = $Window.Resources['ValidationErrorColor']
+    $successBrush = $Window.Resources['ValidationSuccessColor']
+    $warningBrush = $Window.Resources['AppRecommendationOptionalColor']
+    $normalBrush = $Window.Resources['AppFgColor']
+
+    try {
+        $preflight = Get-DefenderRemovalPreflight
+    }
+    catch {
+        $stateText.Text = Get-Translation -Key 'DefenderStatusUnavailable' -FormatArgs @($_.Exception.Message)
+        $stateText.Foreground = $errorBrush
+        return
+    }
+
+    if ($preflight.Installed) {
+        $stateText.Text = Get-Translation -Key 'DefenderStatusInstalled'
+        $stateText.Foreground = $errorBrush
+    }
+    elseif ($preflight.ResidueOnly) {
+        $stateText.Text = Get-Translation -Key 'DefenderStatusResidue' -FormatArgs @($preflight.Residue.Count)
+        $stateText.Foreground = $warningBrush
+    }
+    else {
+        $stateText.Text = Get-Translation -Key 'DefenderStatusAbsent'
+        $stateText.Foreground = $successBrush
+    }
+
+    if (-not $preflight.DefenderPresent) {
+        $protectionText.Text = Get-Translation -Key 'DefenderProtectionNotApplicable'
+        $protectionText.Foreground = $normalBrush
+    }
+    elseif ($preflight.TamperProtected) {
+        $protectionText.Text = Get-Translation -Key 'DefenderProtectionTamperOn'
+        $protectionText.Foreground = $errorBrush
+    }
+    else {
+        $protectionText.Text = Get-Translation -Key 'DefenderProtectionTamperOff'
+        $protectionText.Foreground = $normalBrush
+    }
+
+    if ($preflight.IsUnprotected) {
+        $antivirusText.Text = Get-Translation -Key 'DefenderAntivirusNone'
+        $antivirusText.Foreground = $warningBrush
+    }
+    else {
+        $antivirusText.Text = Get-Translation -Key 'DefenderAntivirusDetected' -FormatArgs @(($preflight.ThirdPartyAntivirus -join ', '))
+        $antivirusText.Foreground = $normalBrush
+    }
+
+    if ($removeCheckBox) {
+        if ($preflight.DefenderPresent) {
+            $removeCheckBox.IsEnabled = $true
+            $removeCheckBox.ToolTip = $null
+        }
+        else {
+            # Nothing left to remove; the preflight would refuse the run with "not present".
+            $removeCheckBox.IsChecked = $false
+            $removeCheckBox.IsEnabled = $false
+            $removeCheckBox.ToolTip = Get-Translation -Key 'DefenderRemovalUnavailableTooltip'
+            [System.Windows.Controls.ToolTipService]::SetShowOnDisabled($removeCheckBox, $true)
+        }
+    }
+}
+
+<#
+    .SYNOPSIS
+        Runs the leftover check and renders its result below the button.
+
+    .DESCRIPTION
+        Shows one block per group that still has something in it. A clean result renders a single
+        line instead, so a fully removed machine does not produce a list of ninety "OK" rows.
+
+    .PARAMETER Window
+        The main window that owns the module controls.
+#>
+function Show-DefenderModuleVerification {
+    param([System.Windows.Window]$Window)
+
+    $summary = $Window.FindName('DefenderVerifySummaryText')
+    $panel = $Window.FindName('DefenderVerifyResultsPanel')
+    if (-not $summary -or -not $panel) { return }
+
+    $errorBrush = $Window.Resources['ValidationErrorColor']
+    $successBrush = $Window.Resources['ValidationSuccessColor']
+    $warningBrush = $Window.Resources['AppRecommendationOptionalColor']
+    $normalBrush = $Window.Resources['AppFgColor']
+
+    $panel.Children.Clear()
+    $summary.Foreground = $normalBrush
+    $summary.Text = Get-Translation -Key 'DefenderVerifyRunning'
+    Invoke-DoEvents
+
+    try {
+        $rows = @(Get-DefenderRemovalReport)
+    }
+    catch {
+        $summary.Text = Get-Translation -Key 'DefenderVerifyFailed' -FormatArgs @($_.Exception.Message)
+        $summary.Foreground = $errorBrush
+        return
+    }
+
+    $failed = @($rows | Where-Object { $_.Status -eq 'Fail' }).Count
+    $warned = @($rows | Where-Object { $_.Status -eq 'Warn' }).Count
+    $passed = @($rows | Where-Object { $_.Status -eq 'Ok' }).Count
+
+    $summary.Text = Get-Translation -Key 'DefenderVerifySummary' -FormatArgs @($rows.Count, $passed, $warned, $failed)
+    if ($failed -gt 0) { $summary.Foreground = $errorBrush }
+    elseif ($warned -gt 0) { $summary.Foreground = $warningBrush }
+    else { $summary.Foreground = $successBrush }
+
+    $problems = @($rows | Where-Object { $_.Status -ne 'Ok' })
+    if ($problems.Count -eq 0) {
+        $cleanLine = New-Object System.Windows.Controls.TextBlock
+        $cleanLine.Text = Get-Translation -Key 'DefenderVerifyAllPassed'
+        $cleanLine.FontSize = 13
+        $cleanLine.TextWrapping = 'Wrap'
+        $cleanLine.Foreground = $successBrush
+        $panel.Children.Add($cleanLine) | Out-Null
+        return
+    }
+
+    foreach ($group in @($problems | Group-Object -Property Group)) {
+        $header = New-Object System.Windows.Controls.TextBlock
+        $header.Text = Get-Translation -Key $group.Name
+        $header.FontSize = 13
+        $header.FontWeight = 'SemiBold'
+        $header.Margin = '0,8,0,2'
+        $header.Foreground = $normalBrush
+        $panel.Children.Add($header) | Out-Null
+
+        foreach ($row in $group.Group) {
+            $line = New-Object System.Windows.Controls.TextBlock
+            $label = if ($row.Status -eq 'Fail') { Get-Translation -Key 'DefenderCheckFail' } else { Get-Translation -Key 'DefenderCheckWarn' }
+            $line.Text = "[{0}] {1}" -f $label, $row.Item
+            $line.FontSize = 12
+            $line.TextWrapping = 'Wrap'
+            $line.Margin = '12,0,0,2'
+            $line.Foreground = if ($row.Status -eq 'Fail') { $errorBrush } else { $warningBrush }
+            $panel.Children.Add($line) | Out-Null
+        }
+    }
+}
+
+# ------------------------------------------------------------------------------------------------
+# Main window page hooks. Callers in Show-MainWindow and MainWindow-Deployment stay one line each.
+# ------------------------------------------------------------------------------------------------
+
+<#
+    .SYNOPSIS
+        Wires the Defender page controls on the main window.
+
+    .DESCRIPTION
+        Buttons are wired by name here instead of in Show-MainWindow so the page lives entirely in
+        this module. The status block is cleared and the lazy-load flag reset, because the status scan
+        is deferred to the first visit of the page.
+
+    .PARAMETER Window
+        The main window that owns the module controls.
+#>
+function Initialize-DefenderModule {
+    param($Window)
+
+    if (-not $Window) { return }
+
+    $refreshButton = $Window.FindName('DefenderRefreshBtn')
+    if ($refreshButton) { $refreshButton.Add_Click({ Update-DefenderModule -Window $Window }) }
+
+    $verifyButton = $Window.FindName('DefenderVerifyBtn')
+    if ($verifyButton) { $verifyButton.Add_Click({ Show-DefenderModuleVerification -Window $Window }) }
+
+    $stateText = $Window.FindName('DefenderStateText')
+    if ($stateText) { $stateText.Text = '' }
+
+    $script:DefenderStatusLoaded = $false
+}
+
+<#
+    .SYNOPSIS
+        Runs the deferred status scan the first time the Defender page is shown.
+
+    .DESCRIPTION
+        The scan reads services, policy keys, drivers and firewall rules, which costs seconds on a
+        machine that already lost the WMI provider. It is therefore started from the tab change
+        handler rather than from the window's Load event.
+
+    .PARAMETER Window
+        The main window that owns the module controls.
+
+    .PARAMETER TabControl
+        The main tab control whose selection decides whether the page is visible.
+#>
+function Update-DefenderModuleOnPageEnter {
+    param($Window, $TabControl)
+
+    if ($script:DefenderStatusLoaded) { return }
+    if (-not $Window -or -not $TabControl) { return }
+    if ($TabControl.SelectedItem -ne $Window.FindName('DefenderTab')) { return }
+
+    $script:DefenderStatusLoaded = $true
+    $stateText = $Window.FindName('DefenderStateText')
+    if ($stateText) { $stateText.Text = Get-Translation -Key 'DefenderStatusChecking' }
+
+    $Window.Dispatcher.BeginInvoke([System.Windows.Threading.DispatcherPriority]::Background, [action]{
+            Update-DefenderModule -Window $Window
+        }) | Out-Null
+}
+
+<#
+    .SYNOPSIS
+        Adds the Defender removal to the pending parameter set when its checkbox is ticked.
+
+    .DESCRIPTION
+        The checkbox is not part of the dynamic tweak controls, so it does not go through
+        UiControlMappings. It has to join the parameter set before the "no changes selected" check.
+
+    .PARAMETER Window
+        The main window that owns the module controls.
+
+    .PARAMETER SelectedFeatureIds
+        The forward-feature set that the apply handler is building for this run.
+#>
+function Add-DefenderModuleToParams {
+    param($Window, $SelectedFeatureIds)
+
+    if (-not $Window) { return }
+
+    $removeCheckBox = $Window.FindName('DefenderRemoveCheckBox')
+    if (-not $removeCheckBox -or $removeCheckBox.IsChecked -ne $true) { return }
+
+    Add-Parameter 'RemoveWindowsDefender'
+    if ($SelectedFeatureIds) { $null = $SelectedFeatureIds.Add('RemoveWindowsDefender') }
+}
+
+<#
+    .SYNOPSIS
+        Clears the Defender removal checkbox, for "clear all tweaks".
+
+    .PARAMETER Window
+        The main window that owns the module controls.
+#>
+function Reset-DefenderModuleSelection {
+    param($Window)
+
+    if (-not $Window) { return }
+
+    $removeCheckBox = $Window.FindName('DefenderRemoveCheckBox')
+    if ($removeCheckBox) { $removeCheckBox.IsChecked = $false }
+}
+
+<#
+    .SYNOPSIS
+        Tells the overview whether the Defender removal is part of this run.
+
+    .PARAMETER Window
+        The main window that owns the module controls.
+
+    .OUTPUTS
+        System.Boolean
+#>
+function Test-DefenderModuleSelected {
+    param($Window)
+
+    if (-not $Window) { return $false }
+
+    $removeCheckBox = $Window.FindName('DefenderRemoveCheckBox')
+    return [bool]($removeCheckBox -and $removeCheckBox.IsChecked -eq $true)
 }

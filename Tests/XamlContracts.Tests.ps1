@@ -2,6 +2,7 @@ Describe 'XAML UI contracts' {
     BeforeAll {
         $script:SchemaPath = Join-Path $PSScriptRoot '..\Schemas'
         $script:GuiPath = Join-Path $PSScriptRoot '..\Scripts\GUI'
+        $script:DefenderPath = Join-Path $PSScriptRoot '..\Scripts\Defender'
         $script:XamlFiles = @(Get-ChildItem -LiteralPath $script:SchemaPath -Filter '*.xaml' -File)
     }
 
@@ -32,8 +33,12 @@ Describe 'XAML UI contracts' {
             'Show-ImportExportConfigWindow.ps1' = @{ dlg = 'ImportExportConfigWindow.xaml'; owner = 'MainWindow.xaml' }
             'Show-RestoreBackupDialog.ps1' = @{ window = 'RestoreBackupWindow.xaml'; ownerWindow = 'MainWindow.xaml' }
             'Show-Bubble.ps1' = @{ bubblePanel = 'BubbleHint.xaml' }
-            'Confirm-DefenderRemoval.ps1' = @{ dialog = 'DefenderRemovalConfirmWindow.xaml'; ownerWindow = 'MainWindow.xaml' }
-            'MainWindow-Defender.ps1' = @{ window = 'MainWindow.xaml' }
+            # Hashtable keys are case-insensitive, so one 'window' entry covers $Window and $window.
+            'Windows-Defender.ps1' = @{
+                window = 'MainWindow.xaml'
+                ownerWindow = 'MainWindow.xaml'
+                dialog = 'DefenderRemovalConfirmWindow.xaml'
+            }
         }
         $schemaNames = @{}
         foreach ($xamlFile in $script:XamlFiles) {
@@ -55,7 +60,9 @@ Describe 'XAML UI contracts' {
         }
 
         $failures = @()
-        foreach ($guiFile in Get-ChildItem -LiteralPath $script:GuiPath -Filter '*.ps1' -File -Recurse) {
+        $guiFiles = @(Get-ChildItem -LiteralPath $script:GuiPath -Filter '*.ps1' -File -Recurse) +
+            @(Get-ChildItem -LiteralPath $script:DefenderPath -Filter '*.ps1' -File -Recurse)
+        foreach ($guiFile in $guiFiles) {
             $tokens = $null
             $parseErrors = $null
             $ast = [System.Management.Automation.Language.Parser]::ParseFile(
